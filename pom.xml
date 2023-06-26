@@ -56,13 +56,6 @@
       <version>5.9.3</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>net.oneandone</groupId>
-      <artifactId>sushi</artifactId>
-      <version>3.3.0</version>
-      <scope>test</scope>
-    </dependency>
-
   </dependencies>
 
   <build>

@@ -16,30 +16,28 @@
 package de.schmizzolin.vish.examples;
 
 import de.schmizzolin.vish.fuse.FuseFS;
-import net.oneandone.sushi.fs.MkdirException;
-import net.oneandone.sushi.fs.World;
-import net.oneandone.sushi.fs.file.FileNode;
-import net.oneandone.sushi.launcher.Failure;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FileFSTest {
-    private static final World WORLD = World.createMinimal();
-
-    private FileNode dir;
+    private static final File BASE = new File("."); // TODO: not always project directory
+    private File dir;
     private Thread loop;
 
     private FuseFS fs;
 
     @BeforeEach
-    public void before() throws MkdirException {
-        dir = WORLD.guessProjectHome(getClass()).join("target/fusevolume").mkdirsOpt();
+    public void before() throws IOException {
+        dir = new File(BASE, "target/fusevolume");
+        dir.mkdirs();
         loop = null;
     }
 
@@ -53,12 +51,12 @@ public class FileFSTest {
 
     @Test
     public void single() throws InterruptedException, IOException {
-        String content = WORLD.guessProjectHome(getClass()).join("pom.xml").readString();
+        String content = Files.readString(new File(BASE, "pom.xml").toPath());
         content = content + content + content + content + content;
         content = content + content + content + content + content;
         start(new FileFS(content));
-        assertEquals(Arrays.asList("file"), dir.list().stream().map((file) -> file.getName()).toList());
-        assertEquals(content, dir.join("file").readString());
+        assertEquals(Arrays.asList("file"), Arrays.asList(dir.listFiles()).stream().map((file) -> file.getName()).toList());
+        assertEquals(content, Files.readString(new File(dir, "file").toPath()));
     }
 
     private void start(FuseFS fs) throws InterruptedException {
