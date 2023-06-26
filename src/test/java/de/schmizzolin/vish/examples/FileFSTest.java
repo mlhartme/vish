@@ -44,9 +44,9 @@ public class FileFSTest {
     }
 
     @AfterEach
-    public void after() throws Failure, InterruptedException {
+    public void after() throws IOException, InterruptedException {
         if (loop != null) {
-            fs.umount(dir);
+            fs.umount(dir.toPath().toFile());
             loop.join();
         }
     }
@@ -66,6 +66,6 @@ public class FileFSTest {
             throw new IllegalStateException();
         }
         this.fs = fs;
-        loop = fs.start(dir, true);
+        loop = fs.start(dir.toPath().toFile(), true);
     }
 }

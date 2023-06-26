@@ -19,9 +19,9 @@ import foreign.fuse.fuse_fill_dir_t;
 import foreign.fuse.fuse_h;
 import foreign.fuse.fuse_operations;
 import foreign.fuse.stat;
-import net.oneandone.sushi.fs.file.FileNode;
-import net.oneandone.sushi.launcher.Failure;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -59,7 +59,7 @@ public abstract class FuseFS {
 
     //-- mount/unmount
 
-    public void mount(FileNode dest, boolean debug) {
+    public void mount(File dest, boolean debug) {
         // see https://github.com/osxfuse/osxfuse/wiki/Mount-options
         List<String> args;
 
@@ -71,7 +71,7 @@ public abstract class FuseFS {
         args.add("-f"); // foreground
         args.add("-s"); // single-threaded
 
-        args.add(dest.getAbsolute());
+        args.add(dest.getAbsolutePath());
         System.load("/usr/local/lib/libfuse.dylib");
 
         try (var arena = Arena.openShared()) {
@@ -131,7 +131,7 @@ public abstract class FuseFS {
         }
     }
 
-    public Thread start(FileNode dir, boolean debug) throws InterruptedException {
+    public Thread start(File dir, boolean debug) throws InterruptedException {
         Thread result;
 
         result = new Thread(() -> {
@@ -148,9 +148,21 @@ public abstract class FuseFS {
         return result;
     }
 
-    public void umount(FileNode dir) throws Failure {
-        // TODO: native call ...
-        dir.getParent().execNoOutput("umount", dir.getAbsolute());
+    public void umount(File dir) throws IOException {
+        ProcessBuilder b;
+        int result;
+
+        b = new ProcessBuilder("umount", dir.getAbsolutePath());
+        b.directory(dir.getParentFile());
+        var p = b.start();
+        try {
+            result = p.waitFor();
+        } catch (InterruptedException e) {
+            throw new IOException(e);
+        }
+        if (result != 0) {
+            throw new IOException("umount failed: " + result);
+        }
     }
 
     //--

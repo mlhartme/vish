@@ -22,12 +22,14 @@ import de.schmizzolin.vish.fs.VaultFs;
 import de.schmizzolin.vish.fuse.FuseFS;
 import net.oneandone.inline.Cli;
 import net.oneandone.inline.Console;
-import net.oneandone.sushi.fs.World;
-import net.oneandone.sushi.fs.file.FileNode;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +48,6 @@ public final class Main {
     }
 
     //--
-    private final World world;
     private final Console console;
 
     private final String fslog;
@@ -61,7 +62,6 @@ public final class Main {
 
     public Main(Console console, boolean merged, String fslog, int timeout, String path, List<String> command) throws IOException {
         // TODO: fsLog
-        this.world = World.create();
         this.console = console;
         if (path != null) {
             if (path.startsWith("/")) {
@@ -87,7 +87,7 @@ public final class Main {
 
     public void run() throws IOException, InterruptedException, VaultException {
         Vault vault;
-        FileNode cwd;
+        Path cwd;
         FuseFS fs;
         Thread mount;
 
@@ -97,17 +97,17 @@ public final class Main {
         }
         vault = vault(vaultPrefix(path));
         fs = new VaultFs(vault, path, merged, getLogger());
-        cwd = world.getWorking().createTempDirectory();
-        mount = fs.start(cwd, false);
+        cwd = Files.createTempDirectory("vish-tmp");
+        mount = fs.start(cwd.toFile(), false);
         console.verbose.println("mount thread started");
         try {
-            body(cwd);
+            body(cwd.toFile());
         } finally {
             console.verbose.println("triggering umount ...");
-            fs.umount(cwd);
+            fs.umount(cwd.toFile());
             console.verbose.println("join mount thread ...");
             mount.join();
-            cwd.deleteDirectory();
+            Files.delete(cwd);
             console.verbose.println("umount done");
         }
     }
@@ -170,7 +170,7 @@ public final class Main {
     }
 
 
-    public void body(FileNode dir) throws IOException, InterruptedException {
+    public void body(File dir) throws IOException, InterruptedException {
         ProcessBuilder builder;
         int result;
         Process process;
@@ -180,7 +180,7 @@ public final class Main {
 
         builder = new ProcessBuilder(command);
         builder.environment().put("PS1", "vault> "); // TODO
-        builder.directory(dir.toPath().toFile());
+        builder.directory(dir);
         builder.inheritIO();
         process = builder.start();
         if (timeout > 0) {
@@ -221,13 +221,12 @@ public final class Main {
     }
 
     private String vaultToken() throws IOException {
-        FileNode file;
+        File file = new File(System.getProperty("user.home"), ".vault-token");
 
-        file = world.getHome().join(".vault-token");
-        if (file.exists()) {
-            return file.readString().trim();
+        if (!file.exists()) {
+            throw new IOException("missing token, try 'vault auth'");
         }
-        throw new IOException("missing token, try 'vault auth'");
+        return Files.readString(file.toPath()).trim();
     }
 
     //--
@@ -235,6 +234,6 @@ public final class Main {
     private PrintWriter getLogger() throws IOException {
         String name = fslog != null ? fslog : "/tmp/vish-" + System.getProperty("user.name") + ".log";
         console.verbose.println("writing filesystem logs to " + name);
-        return new PrintWriter(world.file(name).newWriter(), true);
+        return new PrintWriter(new FileWriter(name), true);
     }
 }
