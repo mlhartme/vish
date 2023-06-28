@@ -12,19 +12,18 @@ Build
 
 Todo:
 * brew packaging and setup
-* umount without external call
 * integration tests with local 'vault'
-* correct fuse_api_version?
+* compile to native code with graal
 * add Linux support
 * write support
-* panama
-  * free native memory
 
 
 Inspired by 
 * https://github.com/SerCeMan/jnr-fuse
 * https://www.davidvlijmincx.com/posts/writing_a_simple_filesystem_using_fuse_and_java_17/
 * https://foojay.io/today/project-panama-for-newbies-part-1/
+* https://github.com/cryptomator/jfuse
+
 
 Naming
 
