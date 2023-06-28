@@ -17,4 +17,3 @@ jextract -D "FUSE_USE_VERSION=29" "-D_FILE_OFFSET_BITS=64" \
 	--include-constant S_IFDIR \
 	--include-constant S_IFREG \
   --source --output $dest/fuse -t foreign.fuse -I work/fuse/include/ -I $include work/fuse/include/fuse.h
-mkdir $dest/work
