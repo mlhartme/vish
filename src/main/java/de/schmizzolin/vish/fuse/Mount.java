@@ -7,7 +7,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 /**
- * Represents a running mount point
+ * Represents a running mount point. Created by fuse filesystem, invoke close to unmount.
  */
 public class Mount extends Thread implements AutoCloseable {
     private final Arena arena;

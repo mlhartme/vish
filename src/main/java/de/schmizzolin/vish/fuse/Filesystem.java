@@ -87,7 +87,6 @@ public abstract class Filesystem {
             Mount result = new Mount(arena, dest, fuse, channel);
             result.setDaemon(false); // TODO
             result.start();
-            Thread.sleep(1000); // TODO: some proper check if filesystem is ready?
             return result;
         } catch (Exception e) {
             arena.close();
