@@ -60,6 +60,10 @@ public abstract class Filesystem {
     //-- mount/unmount
 
     public Mount mount(File dest, boolean debug) {
+        return mount(dest.getAbsolutePath(), debug);
+    }
+
+    public Mount mount(String dest, boolean debug) {
         System.load("/usr/local/lib/libfuse.dylib");
 
         var arena = Arena.openShared();
@@ -80,7 +84,7 @@ public abstract class Filesystem {
                 throw new IllegalArgumentException("new failed");
             }
 
-            Mount result = new Mount(arena, fuse, mountpoint, channel);
+            Mount result = new Mount(arena, dest, fuse, channel);
             result.setDaemon(false); // TODO
             result.start();
             Thread.sleep(1000); // TODO: some proper check if filesystem is ready?
@@ -91,7 +95,7 @@ public abstract class Filesystem {
         }
     }
 
-    private MemorySegment args(Arena arena, File dest, boolean debug) {
+    private MemorySegment args(Arena arena, String dest, boolean debug) {
         List<String> args;
 
         args = new ArrayList<>();
@@ -101,7 +105,7 @@ public abstract class Filesystem {
         }
         args.add("-f"); // foreground
         args.add("-s"); // single-threaded
-        args.add(dest.getAbsolutePath());
+        args.add(dest);
 
         var argC = args.size();
         var argV = arena.allocateArray(ValueLayout.OfAddress.ADDRESS, argC);

@@ -12,26 +12,22 @@ import java.lang.foreign.MemorySegment;
 public class Mount extends Thread implements AutoCloseable {
     private final Arena arena;
 
+    private final String mountpoint;
+
     private final MemorySegment fuse;
-    private final MemorySegment mountpoint;
     private final MemorySegment channel;
 
-    public Mount(Arena arena, MemorySegment fuse, MemorySegment mountpoint, MemorySegment channel) {
+    public Mount(Arena arena, String mountpoint, MemorySegment fuse, MemorySegment channel) {
         this.arena = arena;
-        this.fuse = fuse;
         this.mountpoint = mountpoint;
+        this.fuse = fuse;
         this.channel = channel;
     }
 
 
     @Override
     public void run() {
-        // TODO fuse_h.fuse_set_signal_handlers(session) != -1
-
         int err = fuse_h.fuse_loop(fuse);
-
-        // TODO fuse_h.fuse_remove_signal_handlers(session);
-
         if (err != 0) {
             throw new IllegalStateException("loop returned " + err);
         }
@@ -39,8 +35,6 @@ public class Mount extends Thread implements AutoCloseable {
 
     @Override
     public void close() throws InterruptedException, IOException {
-        Thread.sleep(5000);
-
         for (int i = 0; i < 100; i++) {
             // fuse_exit is not needed: when successful, umount terminates fuse_loop
             fuse_h.fuse_unmount(MemorySegment.NULL /* mount systems hangs if I specify the moint point here */, channel);
@@ -49,8 +43,8 @@ public class Mount extends Thread implements AutoCloseable {
                 arena.close();
                 return;
             }
-            Thread.sleep(100);
+            Thread.sleep(50);
         }
-        throw new IOException("umount timed out - device is busy");
+        throw new IOException("umount timed out - device is busy: " + mountpoint);
     }
 }
