@@ -18,8 +18,9 @@ package de.schmizzolin.vish;
 import com.bettercloud.vault.Vault;
 import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
-import de.schmizzolin.vish.fs.VaultFs;
-import de.schmizzolin.vish.fuse.FuseFS;
+import de.schmizzolin.vish.vault.VaultFs;
+import de.schmizzolin.vish.fuse.Filesystem;
+import de.schmizzolin.vish.fuse.Mount;
 import net.oneandone.inline.Cli;
 import net.oneandone.inline.Console;
 
@@ -88,7 +89,7 @@ public final class Main {
     public void run() throws IOException, InterruptedException, VaultException {
         Vault vault;
         Path cwd;
-        FuseFS fs;
+        Filesystem fs;
 
         if (path == null) {
             console.info.println(help());
@@ -97,7 +98,7 @@ public final class Main {
         vault = vault(vaultPrefix(path));
         fs = new VaultFs(vault, path, merged, getLogger());
         cwd = Files.createTempDirectory("vish-tmp");
-        try (FuseFS.Mount mount = fs.mount(cwd.toFile(), false)) {
+        try (Mount mount = fs.mount(cwd.toFile(), false)) {
             console.verbose.println("mount thread started");
             body(cwd.toFile());
         } finally {

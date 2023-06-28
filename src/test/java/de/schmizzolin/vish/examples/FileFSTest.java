@@ -15,9 +15,7 @@
  */
 package de.schmizzolin.vish.examples;
 
-import de.schmizzolin.vish.fuse.FuseFS;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import de.schmizzolin.vish.fuse.Mount;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -37,7 +35,7 @@ public class FileFSTest {
         String content = Files.readString(new File(BASE, "pom.xml").toPath());
         content = content + content + content + content + content;
         content = content + content + content + content + content;
-        try (FuseFS.Mount mount = new FileFS(content).mount(dir, true)) {
+        try (Mount mount = new FileFS(content).mount(dir, true)) {
             assertEquals(Arrays.asList("file"), Arrays.asList(dir.listFiles()).stream().map((file) -> file.getName()).toList());
             assertEquals(content, Files.readString(new File(dir, "file").toPath()));
         }

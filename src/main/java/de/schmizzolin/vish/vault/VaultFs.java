@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.schmizzolin.vish.fs;
+package de.schmizzolin.vish.vault;
 
 import com.bettercloud.vault.Vault;
 import com.bettercloud.vault.VaultException;
 import com.bettercloud.vault.json.Json;
 import com.bettercloud.vault.json.JsonObject;
 import com.bettercloud.vault.response.LogicalResponse;
-import de.schmizzolin.vish.fuse.FuseFS;
+import de.schmizzolin.vish.fuse.Filesystem;
 import de.schmizzolin.vish.fuse.Errno;
 import de.schmizzolin.vish.fuse.ErrnoException;
 import de.schmizzolin.vish.util.Stdlib;
@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /** Vault filesystem */
-public class VaultFs extends FuseFS {
+public class VaultFs extends Filesystem {
     private final VaultDirectory root;
 
     public final Vault vault;

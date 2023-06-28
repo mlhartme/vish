@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.schmizzolin.vish.fs;
+package de.schmizzolin.vish.vault;
 
 import de.schmizzolin.vish.fuse.ErrnoException;
 

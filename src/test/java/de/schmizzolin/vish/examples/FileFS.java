@@ -15,7 +15,7 @@
  */
 package de.schmizzolin.vish.examples;
 
-import de.schmizzolin.vish.fuse.FuseFS;
+import de.schmizzolin.vish.fuse.Filesystem;
 import de.schmizzolin.vish.fuse.Errno;
 import de.schmizzolin.vish.fuse.ErrnoException;
 import de.schmizzolin.vish.util.Stdlib;
@@ -28,7 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
 /** Serves a single file */
-public class FileFS extends FuseFS {
+public class FileFS extends Filesystem {
     private static final String NAME = "file";
     private final byte[] contents;
 

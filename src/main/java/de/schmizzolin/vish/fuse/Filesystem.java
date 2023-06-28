@@ -24,7 +24,6 @@ import foreign.fuse.stat;
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.foreign.Arena;
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
@@ -32,14 +31,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-public abstract class FuseFS {
+public abstract class Filesystem {
     protected final PrintWriter log;
 
-    protected FuseFS() {
+    protected Filesystem() {
         this(new PrintWriter(System.out));
     }
 
-    protected FuseFS(PrintWriter log) {
+    protected Filesystem(PrintWriter log) {
         if (log == null) {
             throw new IllegalArgumentException();
         }
@@ -60,50 +59,6 @@ public abstract class FuseFS {
 
     //-- mount/unmount
 
-    /** Represents a running mount point */
-    public static class Mount extends Thread implements AutoCloseable {
-        private final Arena arena;
-        private final MemorySegment fuse;
-        private final MemorySegment mountpoint;
-        private final MemorySegment channel;
-
-        public Mount(Arena arena, MemorySegment fuse, MemorySegment mountpoint, MemorySegment channel) {
-            this.arena = arena;
-            this.fuse = fuse;
-            this.mountpoint = mountpoint;
-            this.channel = channel;
-        }
-
-
-        @Override
-        public void run() {
-            // TODO fuse_h.fuse_set_signal_handlers(session) != -1
-
-            int err = fuse_h.fuse_loop(fuse);
-
-            // TODO fuse_h.fuse_remove_signal_handlers(session);
-
-            if (err != 0) {
-                throw new IllegalStateException("loop returned " + err);
-            }
-        }
-
-        @Override
-        public void close() throws InterruptedException {
-            System.out.println("before exit");
-            fuse_h.fuse_exit(fuse);
-            System.out.println("before join");
-            join();
-            System.out.println("before unmount");
-            fuse_h.fuse_unmount(MemorySegment.NULL /* mount systems hangs if I specify the moint point here */, channel);
-            System.out.println("before destroy");
-
-            fuse_h.fuse_destroy(fuse);
-            System.out.println("before close");
-            arena.close();
-        }
-    }
-
     public Mount mount(File dest, boolean debug) {
         System.load("/usr/local/lib/libfuse.dylib");
 
@@ -112,7 +67,6 @@ public abstract class FuseFS {
             MemorySegment args = args(arena, dest, debug);
             MemorySegment channel;
             MemorySegment mountpoint = fuse_args.argv$get(args).getAtIndex(ValueLayout.OfAddress.ADDRESS, fuse_args.argc$get(args) - 1);
-            System.out.println("mp2: " + mountpoint + " " + MemorySegment.ofAddress(mountpoint.address(), 1000).getUtf8String(0));
             if (fuse_h.fuse_parse_cmdline(args, MemorySegment.NULL, MemorySegment.NULL, MemorySegment.NULL) ==-1) {
                 throw new IllegalArgumentException("TODO");
             }
@@ -153,7 +107,6 @@ public abstract class FuseFS {
         var argV = arena.allocateArray(ValueLayout.OfAddress.ADDRESS, argC);
         for (int i = 0; i < argC; i++) {
             var adr = arena.allocateUtf8String(args.get(i));
-            System.out.println("idx " + i + " " + adr + " " + adr.getUtf8String(0));
             argV.setAtIndex(ValueLayout.OfAddress.ADDRESS, i, adr);
         }
         MemorySegment result = fuse_args.allocate(arena);
