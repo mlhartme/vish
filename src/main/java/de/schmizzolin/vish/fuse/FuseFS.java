@@ -24,6 +24,7 @@ import foreign.fuse.stat;
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
@@ -89,11 +90,16 @@ public abstract class FuseFS {
 
         @Override
         public void close() throws InterruptedException {
+            System.out.println("before exit");
             fuse_h.fuse_exit(fuse);
-            fuse_h.fuse_unmount(mountpoint, channel);
+            System.out.println("before join");
             join();
+            System.out.println("before unmount");
+            fuse_h.fuse_unmount(MemorySegment.NULL /* mount systems hangs if I specify the moint point here */, channel);
+            System.out.println("before destroy");
 
             fuse_h.fuse_destroy(fuse);
+            System.out.println("before close");
             arena.close();
         }
     }
@@ -106,7 +112,7 @@ public abstract class FuseFS {
             MemorySegment args = args(arena, dest, debug);
             MemorySegment channel;
             MemorySegment mountpoint = fuse_args.argv$get(args).getAtIndex(ValueLayout.OfAddress.ADDRESS, fuse_args.argc$get(args) - 1);
-
+            System.out.println("mp2: " + mountpoint + " " + MemorySegment.ofAddress(mountpoint.address(), 1000).getUtf8String(0));
             if (fuse_h.fuse_parse_cmdline(args, MemorySegment.NULL, MemorySegment.NULL, MemorySegment.NULL) ==-1) {
                 throw new IllegalArgumentException("TODO");
             }
@@ -146,7 +152,9 @@ public abstract class FuseFS {
         var argC = args.size();
         var argV = arena.allocateArray(ValueLayout.OfAddress.ADDRESS, argC);
         for (int i = 0; i < argC; i++) {
-            argV.setAtIndex(ValueLayout.OfAddress.ADDRESS, i, arena.allocateUtf8String(args.get(i)));
+            var adr = arena.allocateUtf8String(args.get(i));
+            System.out.println("idx " + i + " " + adr + " " + adr.getUtf8String(0));
+            argV.setAtIndex(ValueLayout.OfAddress.ADDRESS, i, adr);
         }
         MemorySegment result = fuse_args.allocate(arena);
         fuse_args.argc$set(result, argC);
