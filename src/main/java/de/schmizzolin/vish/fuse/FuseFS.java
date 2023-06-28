@@ -15,15 +15,16 @@
  */
 package de.schmizzolin.vish.fuse;
 
+import foreign.fuse.fuse_args;
 import foreign.fuse.fuse_fill_dir_t;
 import foreign.fuse.fuse_h;
 import foreign.fuse.fuse_operations;
 import foreign.fuse.stat;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
@@ -59,8 +60,84 @@ public abstract class FuseFS {
 
     //-- mount/unmount
 
-    public void mount(File dest, boolean debug) {
-        // see https://github.com/osxfuse/osxfuse/wiki/Mount-options
+    /** Represents a running mount point */
+    public static class Mount extends Thread implements AutoCloseable {
+        private final Arena arena;
+        private final MemorySegment fuse;
+        private final MemorySegment mountpoint;
+        private final MemorySegment channel;
+
+        public Mount(Arena arena, MemorySegment fuse, MemorySegment mountpoint, MemorySegment channel) {
+            this.arena = arena;
+            this.fuse = fuse;
+            this.mountpoint = mountpoint;
+            this.channel = channel;
+        }
+
+
+        @Override
+        public void run() {
+            // TODO fuse_h.fuse_set_signal_handlers(session) != -1
+
+            int err = fuse_h.fuse_loop(fuse);
+
+            // TODO fuse_h.fuse_remove_signal_handlers(session);
+
+            if (err != 0) {
+                throw new IllegalStateException("loop returned " + err);
+            }
+        }
+
+        @Override
+        public void close() throws InterruptedException {
+            System.out.println("before exit");
+            fuse_h.fuse_exit(fuse);
+            System.out.println("before join");
+            join();
+            System.out.println("before unmount");
+            fuse_h.fuse_unmount(MemorySegment.NULL /* mount systems hangs if I specify the moint point here */, channel);
+            System.out.println("before destroy");
+
+            fuse_h.fuse_destroy(fuse);
+            System.out.println("before close");
+            arena.close();
+        }
+    }
+
+    public Mount mount(File dest, boolean debug) {
+        System.load("/usr/local/lib/libfuse.dylib");
+
+        var arena = Arena.openShared();
+        try {
+            MemorySegment args = args(arena, dest, debug);
+            MemorySegment channel;
+            MemorySegment mountpoint = fuse_args.argv$get(args).getAtIndex(ValueLayout.OfAddress.ADDRESS, fuse_args.argc$get(args) - 1);
+            System.out.println("mp2: " + mountpoint + " " + MemorySegment.ofAddress(mountpoint.address(), 1000).getUtf8String(0));
+            if (fuse_h.fuse_parse_cmdline(args, MemorySegment.NULL, MemorySegment.NULL, MemorySegment.NULL) ==-1) {
+                throw new IllegalArgumentException("TODO");
+            }
+            channel = fuse_h.fuse_mount(mountpoint, args);
+            if (channel == MemorySegment.NULL) {
+                throw new IllegalArgumentException("mount failed");
+            }
+            MemorySegment operations = operations(arena);
+            MemorySegment fuse = fuse_h.fuse_new(channel, args, operations, operations.byteSize(), MemorySegment.NULL);
+            if (fuse == MemorySegment.NULL) {
+                throw new IllegalArgumentException("new failed");
+            }
+
+            Mount result = new Mount(arena, fuse, mountpoint, channel);
+            result.setDaemon(false); // TODO
+            result.start();
+            Thread.sleep(1000); // TODO: some proper check if filesystem is ready?
+            return result;
+        } catch (Exception e) {
+            arena.close();
+            throw new RuntimeException("TODO", e);
+        }
+    }
+
+    private MemorySegment args(Arena arena, File dest, boolean debug) {
         List<String> args;
 
         args = new ArrayList<>();
@@ -70,101 +147,72 @@ public abstract class FuseFS {
         }
         args.add("-f"); // foreground
         args.add("-s"); // single-threaded
-
         args.add(dest.getAbsolutePath());
-        System.load("/usr/local/lib/libfuse.dylib");
 
-        try (var arena = Arena.openShared()) {
-            MemorySegment operations = fuse_operations.allocate(arena);
-            fuse_operations.getattr$set(operations,
-                    fuse_operations.getattr.allocate(
-                            (path, statPtr) -> {
-                                try {
-                                    getAttr(path.getUtf8String(0), stat.ofAddress(statPtr, arena.scope()));
-                                    return 0;
-                                } catch (ErrnoException e) {
-                                    if (e.getCause() != null) {
-                                        e.getCause().printStackTrace(log);
-                                    }
-                                    return e.returnCode();
-                                }
-                            },
-                            arena.scope()));
-
-            fuse_operations.readdir$set(operations,
-                    fuse_operations.readdir.allocate(
-                            (path, buffer, filler, offset, fileInfo) -> {
-                                fuse_fill_dir_t f = fuse_fill_dir_t.ofAddress(filler, arena.scope());
-                                Consumer<String> consumer = str -> f.apply(buffer, arena.allocateUtf8String(str), MemorySegment.NULL, 0);
-                                try {
-                                    readDir(path.getUtf8String(0), consumer);
-                                    return 0;
-                                } catch (ErrnoException e) {
-                                    if (e.getCause() != null) {
-                                        e.getCause().printStackTrace(log);
-                                    }
-                                    return e.returnCode();
-                                }
-                            }, arena.scope()));
-
-            fuse_operations.read$set(operations,
-                    fuse_operations.read.allocate(
-                            (path, buffer, count, offset, info) -> {
-                                ByteBuffer bb = MemorySegment.ofAddress(buffer.address(), count, arena.scope()).asByteBuffer();
-                                try {
-                                    return read(path.getUtf8String(0), bb, toInt(offset));
-                                } catch (ErrnoException e) {
-                                    if (e.getCause() != null) {
-                                        e.getCause().printStackTrace(log);
-                                    }
-                                    return e.returnCode();
-                                }
-                            },
-                            arena.scope()));
-
-            var argC = args.size();
-            var argV = arena.allocateArray(ValueLayout.OfAddress.ADDRESS, argC);
-            for (int i = 0; i < argC; i++) {
-                argV.setAtIndex(ValueLayout.OfAddress.ADDRESS, i, arena.allocateUtf8String(args.get(i)));
-            }
-            fuse_h.fuse_main_real(argC, argV, operations, operations.byteSize(), MemorySegment.NULL);
+        var argC = args.size();
+        var argV = arena.allocateArray(ValueLayout.OfAddress.ADDRESS, argC);
+        for (int i = 0; i < argC; i++) {
+            var adr = arena.allocateUtf8String(args.get(i));
+            System.out.println("idx " + i + " " + adr + " " + adr.getUtf8String(0));
+            argV.setAtIndex(ValueLayout.OfAddress.ADDRESS, i, adr);
         }
-    }
-
-    public Thread start(File dir, boolean debug) throws InterruptedException {
-        Thread result;
-
-        result = new Thread(() -> {
-            try {
-                mount(dir, debug);
-            } catch (Throwable e) {
-                e.printStackTrace();
-                throw e;
-            }
-        });
-        result.setDaemon(false); // TODO
-        result.start();
-        Thread.sleep(1000); // TODO: some proper check if filesystem is ready?
+        MemorySegment result = fuse_args.allocate(arena);
+        fuse_args.argc$set(result, argC);
+        fuse_args.argv$set(result, argV);
+        fuse_args.allocated$set(result, 0);
         return result;
     }
 
-    public void umount(File dir) throws IOException {
-        ProcessBuilder b;
-        int result;
+    private MemorySegment operations(Arena arena) {
+        MemorySegment operations = fuse_operations.allocate(arena);
+        fuse_operations.getattr$set(operations,
+                fuse_operations.getattr.allocate(
+                        (path, statPtr) -> {
+                            try {
+                                getAttr(path.getUtf8String(0), stat.ofAddress(statPtr, arena.scope()));
+                                return 0;
+                            } catch (ErrnoException e) {
+                                if (e.getCause() != null) {
+                                    e.getCause().printStackTrace(log);
+                                }
+                                return e.returnCode();
+                            }
+                        },
+                        arena.scope()));
 
-        b = new ProcessBuilder("umount", dir.getAbsolutePath());
-        b.directory(dir.getParentFile());
-        var p = b.start();
-        try {
-            result = p.waitFor();
-        } catch (InterruptedException e) {
-            throw new IOException(e);
-        }
-        if (result != 0) {
-            throw new IOException("umount failed: " + result);
-        }
+        fuse_operations.readdir$set(operations,
+                fuse_operations.readdir.allocate(
+                        (path, buffer, filler, offset, fileInfo) -> {
+                            fuse_fill_dir_t f = fuse_fill_dir_t.ofAddress(filler, arena.scope());
+                            Consumer<String> consumer = str -> f.apply(buffer, arena.allocateUtf8String(str), MemorySegment.NULL, 0);
+                            try {
+                                readDir(path.getUtf8String(0), consumer);
+                                return 0;
+                            } catch (ErrnoException e) {
+                                if (e.getCause() != null) {
+                                    e.getCause().printStackTrace(log);
+                                }
+                                return e.returnCode();
+                            }
+                        }, arena.scope()));
+
+        fuse_operations.read$set(operations,
+                fuse_operations.read.allocate(
+                        (path, buffer, count, offset, info) -> {
+                            ByteBuffer bb = MemorySegment.ofAddress(buffer.address(), count, arena.scope()).asByteBuffer();
+                            try {
+                                return read(path.getUtf8String(0), bb, toInt(offset));
+                            } catch (ErrnoException e) {
+                                if (e.getCause() != null) {
+                                    e.getCause().printStackTrace(log);
+                                }
+                                return e.returnCode();
+                            }
+                        },
+                        arena.scope()));
+
+        return operations;
     }
-
     //--
 
     private static int toInt(long l) {
