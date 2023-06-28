@@ -29,41 +29,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FileFSTest {
     private static final File BASE = new File("."); // TODO: not always project directory
-    private File dir;
-    private Thread loop;
-
-    private FuseFS fs;
-
-    @BeforeEach
-    public void before() throws IOException {
-        dir = new File(BASE, "target/fusevolume");
-        dir.mkdirs();
-        loop = null;
-    }
-
-    @AfterEach
-    public void after() throws IOException, InterruptedException {
-        if (loop != null) {
-            fs.umount(dir.toPath().toFile());
-            loop.join();
-        }
-    }
 
     @Test
     public void single() throws InterruptedException, IOException {
+        File dir = new File(BASE, "target/single-volume");;
+
         String content = Files.readString(new File(BASE, "pom.xml").toPath());
         content = content + content + content + content + content;
         content = content + content + content + content + content;
-        start(new FileFS(content));
-        assertEquals(Arrays.asList("file"), Arrays.asList(dir.listFiles()).stream().map((file) -> file.getName()).toList());
-        assertEquals(content, Files.readString(new File(dir, "file").toPath()));
-    }
-
-    private void start(FuseFS fs) throws InterruptedException {
-        if (loop != null) {
-            throw new IllegalStateException();
+        try (FuseFS.Mount mount = new FileFS(content).mount(dir, true)) {
+            assertEquals(Arrays.asList("file"), Arrays.asList(dir.listFiles()).stream().map((file) -> file.getName()).toList());
+            assertEquals(content, Files.readString(new File(dir, "file").toPath()));
         }
-        this.fs = fs;
-        loop = fs.start(dir.toPath().toFile(), true);
     }
 }
