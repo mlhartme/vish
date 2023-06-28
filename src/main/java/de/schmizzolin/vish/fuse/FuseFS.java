@@ -105,7 +105,7 @@ public abstract class FuseFS {
         try {
             MemorySegment args = args(arena, dest, debug);
             MemorySegment channel;
-            MemorySegment mountpoint = fuse_args.argv$get(args, fuse_args.argc$get(args) - 1);
+            MemorySegment mountpoint = fuse_args.argv$get(args).getAtIndex(ValueLayout.OfAddress.ADDRESS, fuse_args.argc$get(args) - 1);
 
             if (fuse_h.fuse_parse_cmdline(args, MemorySegment.NULL, MemorySegment.NULL, MemorySegment.NULL) ==-1) {
                 throw new IllegalArgumentException("TODO");
