@@ -89,7 +89,6 @@ public final class Main {
         Vault vault;
         Path cwd;
         FuseFS fs;
-        Thread mount;
 
         if (path == null) {
             console.info.println(help());
@@ -98,15 +97,11 @@ public final class Main {
         vault = vault(vaultPrefix(path));
         fs = new VaultFs(vault, path, merged, getLogger());
         cwd = Files.createTempDirectory("vish-tmp");
-        mount = fs.start(cwd.toFile(), false);
-        console.verbose.println("mount thread started");
-        try {
+        try (FuseFS.Mount mount = fs.mount(cwd.toFile(), false)) {
+            console.verbose.println("mount thread started");
             body(cwd.toFile());
         } finally {
-            console.verbose.println("triggering umount ...");
-            fs.umount(cwd.toFile());
-            console.verbose.println("join mount thread ...");
-            mount.join();
+            console.verbose.println("cleanup");
             Files.delete(cwd);
             console.verbose.println("umount done");
         }
