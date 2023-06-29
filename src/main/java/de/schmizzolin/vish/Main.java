@@ -162,6 +162,8 @@ public final class Main {
         builder.append("                 to find secrets containing 'partifactory'\n");
         builder.append("    vish your/secrets find . -type d -empty\n");
         builder.append("                 to find all empty directories (which are usually deleted nodes)\n");
+        builder.append("    vish your/secrets find . -mmin -60 -type\n");
+        builder.append("                 to find secrets modified in the last 60 minutes\n");
         return builder.toString();
     }
 
