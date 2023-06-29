@@ -156,10 +156,10 @@ public final class Main {
         builder.append("environment:\n");
         builder.append("    VAULT_ADDR   url of the vault server\n");
         builder.append("examples:\n");
-        builder.append("    vish your/secrets");
-        builder.append("                 start a shell in your secrets");
-        builder.append("    vish your/secrets grep -r -i partifactory .");
-        builder.append("                 to find secrets containing 'partifactory'");
+        builder.append("    vish your/secrets\n");
+        builder.append("                 start a shell in your secrets\n");
+        builder.append("    vish your/secrets grep -r -i partifactory .\n");
+        builder.append("                 to find secrets containing 'partifactory'\n");
         builder.append("    vish your/secrets find . -type d -empty\n");
         builder.append("                 to find all empty directories (which are usually deleted nodes)\n");
         return builder.toString();
