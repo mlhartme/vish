@@ -142,7 +142,7 @@ public final class Main {
                     .append(" (").append(pkg.getImplementationVersion()).append(")\n");
         }
         builder.append("    executes a command with vault secrets mounted read-only into the current directory\n");
-        builder.append("    requires Java 20");
+        builder.append("    requires Java 21");
         builder.append("\n");
         builder.append("usage: 'vish' ['-m']['-v']['-e']['-fslog' <fslog>]['-timeout' <n>] <path> <command*>\n");
         builder.append("    -m           merged properties in a single - possibly empty - file\n");

@@ -4,7 +4,9 @@ dest=work/generated
 rm -rf $dest
 mkdir $dest
 
-alias jextract="work/jextract-20/bin/java --enable-native-access=org.openjdk.jextract -m org.openjdk.jextract/org.openjdk.jextract.JextractTool"
+# TODO
+alias jextract="$HOME/bin/jextract/bin/java --enable-native-access=org.openjdk.jextract -m org.openjdk.jextract/org.openjdk.jextract.JextractTool"
+
 # depend on Ventura -- macOS 13
 include=/Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk/usr/include
 echo "generate fuse bindings ..."

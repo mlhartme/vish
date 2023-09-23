@@ -13,7 +13,7 @@
   <inceptionYear>2023</inceptionYear>
 
   <properties>
-    <java.major>20</java.major>
+    <java.major>21</java.major>
     <maven.javadoc.skip>true</maven.javadoc.skip>
   </properties>
 

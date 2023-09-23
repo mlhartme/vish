@@ -4,19 +4,19 @@ Mounts vault secrets as a filesystem and opens a shell inside.
 
 Run Prerequisites:
 * Mac OS
-* Java 20
+* Java 21 with https://openjdk.org/jeps/442
 * OSX Fuse https://osxfuse.github.io
 
 Build
 * with MAVEN_OPTS=--enable-preview
 
 Todo:
-* brew packaging and setup
 * integration tests with local 'vault'
-* compile to native code with graal
-* add Linux support
+* brew packaging and setup
+* Arm Mac & Linux support
 * write support
-
+* compile to native code with graal
+    
 
 Inspired by 
 * https://github.com/SerCeMan/jnr-fuse

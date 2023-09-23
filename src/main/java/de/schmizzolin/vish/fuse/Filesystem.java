@@ -66,11 +66,11 @@ public abstract class Filesystem {
     public Mount mount(String dest, boolean debug) {
         System.load("/usr/local/lib/libfuse.dylib");
 
-        var arena = Arena.openShared();
+        var arena = Arena.ofShared();
         try {
             MemorySegment args = args(arena, dest, debug);
             MemorySegment channel;
-            MemorySegment mountpoint = fuse_args.argv$get(args).getAtIndex(ValueLayout.OfAddress.ADDRESS, fuse_args.argc$get(args) - 1);
+            MemorySegment mountpoint = fuse_args.argv$get(args).getAtIndex(ValueLayout.ADDRESS, fuse_args.argc$get(args) - 1);
             if (fuse_h.fuse_parse_cmdline(args, MemorySegment.NULL, MemorySegment.NULL, MemorySegment.NULL) ==-1) {
                 throw new IllegalArgumentException("TODO");
             }
@@ -107,10 +107,10 @@ public abstract class Filesystem {
         args.add(dest);
 
         var argC = args.size();
-        var argV = arena.allocateArray(ValueLayout.OfAddress.ADDRESS, argC);
+        var argV = arena.allocateArray(ValueLayout.ADDRESS, argC);
         for (int i = 0; i < argC; i++) {
             var adr = arena.allocateUtf8String(args.get(i));
-            argV.setAtIndex(ValueLayout.OfAddress.ADDRESS, i, adr);
+            argV.setAtIndex(ValueLayout.ADDRESS, i, adr);
         }
         MemorySegment result = fuse_args.allocate(arena);
         fuse_args.argc$set(result, argC);
@@ -125,7 +125,7 @@ public abstract class Filesystem {
                 fuse_operations.getattr.allocate(
                         (path, statPtr) -> {
                             try {
-                                getAttr(path.getUtf8String(0), stat.ofAddress(statPtr, arena.scope()));
+                                getAttr(path.getUtf8String(0), stat.ofAddress(statPtr, arena));
                                 return 0;
                             } catch (ErrnoException e) {
                                 if (e.getCause() != null) {
@@ -134,12 +134,12 @@ public abstract class Filesystem {
                                 return e.returnCode();
                             }
                         },
-                        arena.scope()));
+                        arena));
 
         fuse_operations.readdir$set(operations,
                 fuse_operations.readdir.allocate(
                         (path, buffer, filler, offset, fileInfo) -> {
-                            fuse_fill_dir_t f = fuse_fill_dir_t.ofAddress(filler, arena.scope());
+                            fuse_fill_dir_t f = fuse_fill_dir_t.ofAddress(filler, arena);
                             Consumer<String> consumer = str -> f.apply(buffer, arena.allocateUtf8String(str), MemorySegment.NULL, 0);
                             try {
                                 readDir(path.getUtf8String(0), consumer);
@@ -150,12 +150,12 @@ public abstract class Filesystem {
                                 }
                                 return e.returnCode();
                             }
-                        }, arena.scope()));
+                        }, arena));
 
         fuse_operations.read$set(operations,
                 fuse_operations.read.allocate(
                         (path, buffer, count, offset, info) -> {
-                            ByteBuffer bb = MemorySegment.ofAddress(buffer.address(), count, arena.scope()).asByteBuffer();
+                            ByteBuffer bb = MemorySegment.ofAddress(buffer.address()).reinterpret(count).asByteBuffer();
                             try {
                                 return read(path.getUtf8String(0), bb, toInt(offset));
                             } catch (ErrnoException e) {
@@ -165,7 +165,7 @@ public abstract class Filesystem {
                                 return e.returnCode();
                             }
                         },
-                        arena.scope()));
+                        arena));
 
         return operations;
     }
