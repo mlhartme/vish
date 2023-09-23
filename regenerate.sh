@@ -1,18 +1,12 @@
 #!/bin/sh
 set -e
 
-if [ ! -d work ] ; then
-  mkdir work
-  cd work
-  echo "clone osx fuse ... https://github.com/osxfuse/fuse/"
-  # TODO: vanilla fuse didn't work -- FUSE_USE_VERSION problem?
-  git clone "git@github.com:osxfuse/fuse.git"
-  cd ..
-fi
+./get-fuse.sh
+./build-jextract-21.sh
 
-# TODO
-alias jextract="$HOME/bin/jextract/bin/java --enable-native-access=org.openjdk.jextract -m org.openjdk.jextract/org.openjdk.jextract.JextractTool"
+alias jextract="work/jextract/bin/java --enable-native-access=org.openjdk.jextract -m org.openjdk.jextract/org.openjdk.jextract.JextractTool"
 
+echo "wiping old bindings ..."
 rm -rf src/main/java/foreign
 mkdir src/main/java/foreign
 

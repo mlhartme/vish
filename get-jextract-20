@@ -1,0 +1,9 @@
+#!/bin/sh
+echo "get jextract ... https://github.com/openjdk/jextract"
+dest=work/jextract
+if [ ! -d $dest ] ; then
+  mkdir $dest
+  cd $dest
+  curl https://download.java.net/java/early_access/jextract/1/openjdk-20-jextract+1-2_macos-x64_bin.tar.gz | tar zx --strip-components=1
+fi
+
