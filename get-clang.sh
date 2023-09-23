@@ -1,8 +1,8 @@
 #!/bin/sh
-# download clang
+# download clang for intel mac
 set -e
 
-dest=work/clang
+dest=work/bin/clang
 if [ ! -d $dest ] ; then
   mkdir -p $dest
   cd $dest

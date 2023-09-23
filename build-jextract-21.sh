@@ -2,7 +2,7 @@
 # builds jextract for jdk 21 for intel mac
 set -e
 
-dest=work/jextract
+dest=work/bin/jextract
 if [ -d $dest ] ; then
   exit 0;
 fi
@@ -21,7 +21,7 @@ git checkout jdk21
 
 echo "building ..."
 export JAVA_HOME=$java17
-sh ./gradlew -Pjdk21_home=$java21 -Pllvm_home=../clang clean verify
+sh ./gradlew -Pjdk21_home=$java21 -Pllvm_home=../bin/clang clean verify
 
 echo "installing ..."
 cd ../..
