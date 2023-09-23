@@ -1,11 +1,20 @@
 #!/bin/sh
 set -e
-dest=work/generated
-rm -rf $dest
-mkdir $dest
+
+if [ ! -d work ] ; then
+  mkdir work
+  cd work
+  echo "clone osx fuse ... https://github.com/osxfuse/fuse/"
+  # TODO: vanilla fuse didn't work -- FUSE_USE_VERSION problem?
+  git clone "git@github.com:osxfuse/fuse.git"
+  cd ..
+fi
 
 # TODO
 alias jextract="$HOME/bin/jextract/bin/java --enable-native-access=org.openjdk.jextract -m org.openjdk.jextract/org.openjdk.jextract.JextractTool"
+
+rm -rf src/main/java/foreign
+mkdir src/main/java/foreign
 
 # depend on Ventura -- macOS 13
 include=/Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk/usr/include
@@ -29,4 +38,4 @@ jextract -D "FUSE_USE_VERSION=29" "-D_FILE_OFFSET_BITS=64" \
 	--include-typedef fuse_fill_dir_t \
 	--include-constant S_IFDIR \
 	--include-constant S_IFREG \
-  --source --output $dest/fuse -t foreign.fuse -I work/fuse/include/ -I $include work/fuse/include/fuse.h
+  --source --output src/main/java -t foreign.fuse -I work/fuse/include/ -I $include work/fuse/include/fuse.h
