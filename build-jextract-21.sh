@@ -9,6 +9,7 @@ fi
 ./get-clang.sh
 
 java17=`/usr/libexec/java_home -v 17`
+# TODO
 java21=/Users/mhm/Packages/jdk-21.jdk/Contents/Home
 builddir=work/jextract-src
 rm -rf $builddir
