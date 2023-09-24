@@ -4,7 +4,7 @@ Mounts vault secrets as a filesystem and opens a shell inside.
 
 Run Prerequisites:
 * Intel or ARM Mac
-* Java 21 with https://openjdk.org/jeps/442
+* Java 21 (which brings https://openjdk.org/jeps/442)
 * OSX Fuse https://osxfuse.github.io
 
 Build Prerequisites
