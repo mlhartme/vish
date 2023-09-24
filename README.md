@@ -7,8 +7,9 @@ Run Prerequisites:
 * Java 21 with https://openjdk.org/jeps/442
 * OSX Fuse https://osxfuse.github.io
 
-Build
-* with MAVEN_OPTS=--enable-preview
+Build Prerequisites
+* Maven with MAVEN_OPTS=--enable-preview
+* Vault for testing
 
 Todo:
 * integration tests with local 'vault'
