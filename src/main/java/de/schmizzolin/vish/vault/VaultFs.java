@@ -49,7 +49,7 @@ public class VaultFs extends Filesystem {
 
     public final long dirModified;
 
-    public VaultFs(Vault vault, String path, boolean merged, PrintWriter log) throws IOException {
+    public VaultFs(Vault vault, String path, boolean merged, PrintWriter log) {
         super(log);
 
         if (path.length() <= 1 || path.startsWith("/") || !path.endsWith("/")) {
