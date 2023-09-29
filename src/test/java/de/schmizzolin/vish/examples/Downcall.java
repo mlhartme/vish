@@ -24,12 +24,18 @@ import java.lang.invoke.MethodHandle;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 public class Downcall {
+    /**
+     * https://www.gnu.org/software/libc/manual/html_node/Process-Identification.html
+     */
     public static void main(String[] args) throws Throwable {
+        printPid();
+    }
+    public static void printPid() throws Throwable {
         Linker linker = Linker.nativeLinker();
         SymbolLookup stdlibs = linker.defaultLookup();
-        MemorySegment getpid = stdlibs.find("getpid").get();
+        MemorySegment address = stdlibs.find("getpid").get();
         FunctionDescriptor descriptor = FunctionDescriptor.of(JAVA_INT);
-        MethodHandle handle = linker.downcallHandle(getpid, descriptor);
+        MethodHandle handle = linker.downcallHandle(address, descriptor);
         int pid = (int) handle.invoke();
         System.out.println("pid: " + pid);
     }
