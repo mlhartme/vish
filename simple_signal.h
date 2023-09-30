@@ -4,5 +4,5 @@ struct sigaction {
   int sa_flags;
 };
 
-int sigaction(int, struct sigaction*, struct sigaction*);
+int sigaction(int signum, struct sigaction* act, struct sigaction* oldact);
  

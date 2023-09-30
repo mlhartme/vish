@@ -41,47 +41,23 @@ public class Signal {
 
 
     public static void main(String[] args) throws Throwable {
+        Arena arena = Arena.global();
         Downcall.printPid();
 
-        MemorySegment struct = Arena.global().allocate(sigactionLayout);
-        sigaction.sa_flagsHandle.set(struct, 0);
-        sigaction.sa_maskHandle.set(struct, 0);
-        sigaction.sa_handlerHandle.set(struct, sigactionAllocate(Arena.global()));
-        System.out.println("before");
+        MemorySegment handler = handleSignalUpcall(arena);
+        MemorySegment struct = createStruct(handler, arena);
         sigaction(30, struct, MemorySegment.NULL);
-        System.out.println("after");
+
         Thread.sleep(10000);
     }
 
+    //-- upcall
 
     public static void handleSignal(int signal) {
         System.out.println("got signal: " + signal);
     }
-    //--
 
-    static final FunctionDescriptor sigactionDescriptor = FunctionDescriptor.of(JAVA_INT,
-            JAVA_INT,
-            POINTER,
-            POINTER
-    );
-    private static final MethodHandle sigactionHandle
-            = SYMBOL_LOOKUP.find("sigaction").map(addr -> LINKER.downcallHandle(addr, sigactionDescriptor)).orElseThrow();
-
-    public static int sigaction(int x0, MemorySegment x1, MemorySegment x2) {
-        try {
-            return (int) sigactionHandle.invokeExact(x0, x1, x2);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    static final StructLayout sigactionLayout = MemoryLayout.structLayout(
-            POINTER.withName("sa_handler"),
-            JAVA_INT.withName("sa_mask"),
-            JAVA_INT.withName("sa_flags")
-    ).withName("sigaction");
-
-    static MemorySegment    sigactionAllocate(Arena scope) {
+    static MemorySegment handleSignalUpcall(Arena scope) {
         try {
             FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(JAVA_INT);
             MethodHandle handle = MH_LOOKUP.findStatic(Signal.class, "handleSignal", descriptor.toMethodType());
@@ -91,13 +67,36 @@ public class Signal {
         }
     }
 
-    public static class sigaction {
-        static final VarHandle sa_handlerHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_handler"));
-        static final VarHandle sa_maskHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_mask"));
-        static final VarHandle sa_flagsHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_flags"));
+    //-- struct
 
-        public interface sa_handler {
-            void apply(int _x0);
+    private static MemorySegment createStruct(MemorySegment handler, Arena arena) {
+        StructLayout layout = MemoryLayout.structLayout(
+                POINTER.withName("sa_handler"),
+                JAVA_INT.withName("sa_mask"),
+                JAVA_INT.withName("sa_flags")
+        ).withName("sigaction");
+
+        MemorySegment struct = arena.allocate(layout);
+        layout.varHandle(element("sa_handler")).set(struct, handler);
+        layout.varHandle(element("sa_mask")).set(struct, 0);
+        layout.varHandle(element("sa_flags")).set(struct, 0);
+        return struct;
+    }
+    private static MemoryLayout.PathElement element(String name) {
+        return MemoryLayout.PathElement.groupElement(name);
+    }
+
+    //-- downcall
+
+    static final FunctionDescriptor sigactionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, POINTER, POINTER);
+    private static final MethodHandle sigactionHandle = SYMBOL_LOOKUP.find("sigaction")
+            .map(addr -> LINKER.downcallHandle(addr, sigactionDescriptor)).orElseThrow();
+
+    public static int sigaction(int signum, MemorySegment act, MemorySegment oldact) {
+        try {
+            return (int) sigactionHandle.invokeExact(signum, act, oldact);
+        } catch (Throwable e) {
+            throw new AssertionError("should not reach here", e);
         }
     }
 }
