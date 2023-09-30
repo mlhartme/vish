@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.schmizzolin.vish.examples;
+package de.schmizzolin.vish.signal;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -23,7 +23,7 @@ import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
-public class Downcall {
+public class Getpid {
     /**
      * https://www.gnu.org/software/libc/manual/html_node/Process-Identification.html
      */

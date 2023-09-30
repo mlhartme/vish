@@ -15,8 +15,6 @@
  */
 package de.schmizzolin.vish.signal;
 
-import de.schmizzolin.vish.examples.Downcall;
-
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -28,11 +26,13 @@ import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
+/**
+ * https://www.gnu.org/software/libc/manual/html_node/Advanced-Signal-Handling.html
+ */
 public class Signal {
     private static final MethodHandles.Lookup MH_LOOKUP = MethodHandles.lookup();
     private static final Linker LINKER = Linker.nativeLinker();
@@ -41,14 +41,15 @@ public class Signal {
 
 
     public static void main(String[] args) throws Throwable {
-        Arena arena = Arena.global();
-        Downcall.printPid();
+        try (Arena arena = Arena.ofConfined()) {
+            Getpid.printPid();
 
-        MemorySegment handler = handleSignalUpcall(arena);
-        MemorySegment struct = createStruct(handler, arena);
-        sigaction(30, struct, MemorySegment.NULL);
+            MemorySegment handler = allocateHandlerStub(arena);
+            MemorySegment struct = allocateStruct(handler, arena);
+            sigaction(30, struct, MemorySegment.NULL);
 
-        Thread.sleep(10000);
+            Thread.sleep(10000);
+        }
     }
 
     //-- upcall
@@ -57,11 +58,11 @@ public class Signal {
         System.out.println("got signal: " + signal);
     }
 
-    static MemorySegment handleSignalUpcall(Arena scope) {
+    static MemorySegment allocateHandlerStub(Arena arena) {
         try {
             FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(JAVA_INT);
             MethodHandle handle = MH_LOOKUP.findStatic(Signal.class, "handleSignal", descriptor.toMethodType());
-            return LINKER.upcallStub(handle, descriptor, scope);
+            return LINKER.upcallStub(handle, descriptor, arena);
         } catch (NoSuchMethodException | IllegalAccessException ex) {
             throw new AssertionError(ex);
         }
@@ -69,7 +70,7 @@ public class Signal {
 
     //-- struct
 
-    private static MemorySegment createStruct(MemorySegment handler, Arena arena) {
+    private static MemorySegment allocateStruct(MemorySegment handler, Arena arena) {
         StructLayout layout = MemoryLayout.structLayout(
                 POINTER.withName("sa_handler"),
                 JAVA_INT.withName("sa_mask"),
