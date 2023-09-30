@@ -2,7 +2,11 @@
 set -e
 
 ./get-fuse.sh
-./get-jextract-21.sh
+if [ `uname -p` = "arm" ] ; then
+  ./build-jextract-21.sh
+else
+  ./get-jextract-21.sh
+fi
 
 alias jextract="work/bin/jextract/bin/java --enable-native-access=org.openjdk.jextract -m org.openjdk.jextract/org.openjdk.jextract.JextractTool"
 
