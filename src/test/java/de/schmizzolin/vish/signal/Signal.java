@@ -35,13 +35,23 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 public class Signal {
+    private static final MethodHandles.Lookup MH_LOOKUP = MethodHandles.lookup();
+    private static final Linker LINKER = Linker.nativeLinker();
+    private static final SymbolLookup SYMBOL_LOOKUP = LINKER.defaultLookup();
+    static final AddressLayout POINTER = ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
+
+    static MethodHandle downcallHandle(String name, FunctionDescriptor fdesc) {
+        return SYMBOL_LOOKUP.find(name).map(addr -> LINKER.downcallHandle(addr, fdesc)).orElseThrow();
+    }
+
+
     public static void main(String[] args) throws Throwable {
         Downcall.printPid();
 
-        MemorySegment struct = sigaction.allocate(Arena.global());
-        sigaction.sa_flags$set(struct, 0);
-        sigaction.sa_mask$set(struct, 0);
-        sigaction.sa_handler$set(struct,
+        MemorySegment struct = Arena.global().allocate(sigactionLayout);
+        sigaction.sa_flagsHandle.set(struct, 0);
+        sigaction.sa_maskHandle.set(struct, 0);
+        sigaction.sa_handlerHandle.set(struct,
                 sigaction.sa_handler.allocate(signal -> System.out.println("got signal " + signal), Arena.global()));
         System.out.println("before");
         sigaction(30, struct, MemorySegment.NULL);
@@ -49,35 +59,6 @@ public class Signal {
         Thread.sleep(10000);
     }
 
-
-    private static final Linker LINKER = Linker.nativeLinker();
-    private static final MethodHandles.Lookup MH_LOOKUP = MethodHandles.lookup();
-    private static final SymbolLookup SYMBOL_LOOKUP;
-    private static final SegmentAllocator THROWING_ALLOCATOR = (x, y) -> { throw new AssertionError("should not reach here"); };
-    static final AddressLayout POINTER = ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
-
-    static {
-
-        SymbolLookup loaderLookup = SymbolLookup.loaderLookup();
-        SYMBOL_LOOKUP = name -> loaderLookup.find(name).or(() -> LINKER.defaultLookup().find(name));
-    }
-
-    static <T> T requireNonNull(T obj, String symbolName) {
-        if (obj == null) {
-            throw new UnsatisfiedLinkError("unresolved symbol: " + symbolName);
-        }
-        return obj;
-    }
-
-    static MethodHandle downcallHandle(String name, FunctionDescriptor fdesc) {
-        return SYMBOL_LOOKUP.find(name).
-                map(addr -> LINKER.downcallHandle(addr, fdesc)).
-                orElse(null);
-    }
-
-    static MethodHandle downcallHandle(FunctionDescriptor fdesc) {
-        return LINKER.downcallHandle(fdesc);
-    }
 
     static MethodHandle upcallHandle(Class<?> fi, String name, FunctionDescriptor fdesc) {
         try {
@@ -113,31 +94,24 @@ public class Signal {
         }
     }
 
+    static final StructLayout sigactionLayout = MemoryLayout.structLayout(
+            POINTER.withName("sa_handler"),
+            JAVA_INT.withName("sa_mask"),
+            JAVA_INT.withName("sa_flags")
+    ).withName("sigaction");
+
     public static class sigaction {
-        static final StructLayout const$0 = MemoryLayout.structLayout(
-                POINTER.withName("sa_handler"),
-                JAVA_INT.withName("sa_mask"),
-                JAVA_INT.withName("sa_flags")
-        ).withName("sigaction");
         static final FunctionDescriptor const$1 = FunctionDescriptor.ofVoid(
                 JAVA_INT
         );
-        static final MethodHandle const$2 = upcallHandle(sa_handler.class, "apply", const$1);
-        static final MethodHandle const$3 = downcallHandle(
-                const$1
-        );
-        static final VarHandle const$4 = const$0.varHandle(MemoryLayout.PathElement.groupElement("sa_handler"));
-        static final VarHandle const$5 = const$0.varHandle(MemoryLayout.PathElement.groupElement("sa_mask"));
+        static final MethodHandle const$3 = LINKER.downcallHandle(const$1);
+        static final VarHandle sa_handlerHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_handler"));
+        static final VarHandle sa_maskHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_mask"));
 
-
-        public static MemoryLayout $LAYOUT() {
-            return const$0;
-        }
         public interface sa_handler {
-
             void apply(int _x0);
             static MemorySegment allocate(sa_handler fi, Arena scope) {
-                return upcallStub(const$2, fi, const$1, scope);
+                return upcallStub(upcallHandle(sa_handler.class, "apply", const$1), fi, const$1, scope);
             }
             static sa_handler ofAddress(MemorySegment addr, Arena arena) {
                 MemorySegment symbol = addr.reinterpret(arena, null);
@@ -151,17 +125,6 @@ public class Signal {
             }
         }
 
-        public static void sa_handler$set(MemorySegment seg, MemorySegment x) {
-            const$4.set(seg, x);
-        }
-        public static void sa_mask$set(MemorySegment seg, int x) {
-            const$5.set(seg, x);
-        }
-
-        static final VarHandle xxx = const$0.varHandle(MemoryLayout.PathElement.groupElement("sa_flags"));
-        public static void sa_flags$set(MemorySegment seg, int x) {
-            xxx.set(seg, x);
-        }
-        public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
+        static final VarHandle sa_flagsHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_flags"));
     }
 }
