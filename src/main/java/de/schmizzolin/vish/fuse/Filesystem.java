@@ -24,12 +24,21 @@ import foreign.fuse.stat;
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
+
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
 public abstract class Filesystem {
     protected final PrintWriter log;
@@ -119,23 +128,36 @@ public abstract class Filesystem {
         return result;
     }
 
+    public int getAttrRaw(MemorySegment path, MemorySegment statPtr) {
+        try {
+            System.out.println("getraw");
+            if (false) {
+                getAttr(path.getUtf8String(0), stat.ofAddress(statPtr, Arena.global() /* TODO */));
+            }
+            return 0;
+        } catch (ErrnoException e) {
+            if (e.getCause() != null) {
+                e.getCause().printStackTrace(log);
+            }
+            return e.returnCode();
+        }
+    }
+    private static MethodHandle GET_ATTR_HANDLE;
+
+    static {
+        try {
+            GET_ATTR_HANDLE = MethodHandles.lookup()
+                    .findVirtual(Filesystem.class, "getAttrRaw",
+                            MethodType.methodType(int.class, MemorySegment.class, MemorySegment.class));
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     private MemorySegment operations(Arena arena) {
         MemorySegment operations = fuse_operations.allocate(arena);
         fuse_operations.getattr$set(operations,
-                fuse_operations.getattr.allocate(
-                        (path, statPtr) -> {
-                            try {
-                                getAttr(path.getUtf8String(0), stat.ofAddress(statPtr, arena));
-                                return 0;
-                            } catch (ErrnoException e) {
-                                if (e.getCause() != null) {
-                                    e.getCause().printStackTrace(log);
-                                }
-                                return e.returnCode();
-                            }
-                        },
-                        arena));
-
+                Linker.nativeLinker().upcallStub(GET_ATTR_HANDLE.bindTo(this), FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)), ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE))), Arena.global() /* TODO */));
         fuse_operations.readdir$set(operations,
                 fuse_operations.readdir.allocate(
                         (path, buffer, filler, offset, fileInfo) -> {
