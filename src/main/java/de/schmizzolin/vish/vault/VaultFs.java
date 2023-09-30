@@ -26,7 +26,6 @@ import de.schmizzolin.vish.fuse.ErrnoException;
 import de.schmizzolin.vish.util.Stdlib;
 import foreign.fuse.stat;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;

@@ -15,6 +15,7 @@
   <properties>
     <java.major>21</java.major>
     <maven.javadoc.skip>true</maven.javadoc.skip>
+    <checkstyle.excludes>foreign/fuse/**/*</checkstyle.excludes>
   </properties>
 
   <groupId>de.mlhartme</groupId>
