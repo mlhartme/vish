@@ -93,7 +93,7 @@
         <configuration>
           <name>vish</name>
           <main>de.schmizzolin.vish.Main</main>
-          <java>$(/usr/libexec/java_home -v 21)/bin/java</java>
+          <java>$(/usr/libexec/java_home -F -v 21)/bin/java</java>
           <options>"-Djava.awt.headless=true --enable-preview --enable-native-access=ALL-UNNAMED"</options>
           <remove>module-info.class, META-INF/versions/9/module-info.class, META-INF/BC1024KE.*, META-INF/BC2048KE.*, META-INF/BCKEY.*, about.html, META-INF/maven/org.codehaus.plexus/plexus-interpolation/pom.*, META-INF/wsd.properties, META-INF/pominfo.properties, META-INF/maven/plugin.xml</remove>
           <equal>com/jcraft/jsch/agentproxy/*.class, META-INF/BC????KE.*</equal>
