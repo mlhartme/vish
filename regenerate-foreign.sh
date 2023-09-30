@@ -14,8 +14,7 @@ echo "wiping old bindings ..."
 rm -rf src/main/java/foreign
 mkdir src/main/java/foreign
 
-# depend on Ventura -- macOS 13
-include=/Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk/usr/include
+include=/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk/usr/include
 echo "generate fuse bindings ..."
 jextract -D "FUSE_USE_VERSION=29" "-D_FILE_OFFSET_BITS=64" \
 	--include-function fuse_main_real \

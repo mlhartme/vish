@@ -10,8 +10,6 @@ echo "wiping old bindings ..."
 rm -rf target/signal
 mkdir target/signal
 
-# depend on Ventura -- macOS 13
-include=/Library/Developer/CommandLineTools/SDKs/MacOSX13.sdk/usr/include
-echo "generate fuse bindings ..."
-jextract -D "FUSE_USE_VERSION=29" "-D_FILE_OFFSET_BITS=64" \
-  --source --output target/signal -t foreign.signal -I $include $include/signal.h
+include=/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk/usr/include
+echo "generate simple signal bindings ..."
+jextract --source --output target/signal -t foreign.signal -I $include simple_signal.h
