@@ -2,7 +2,7 @@
 set -e
 
 ./get-fuse.sh
-./build-jextract-21.sh
+./get-jextract-21.sh
 
 alias jextract="work/bin/jextract/bin/java --enable-native-access=org.openjdk.jextract -m org.openjdk.jextract/org.openjdk.jextract.JextractTool"
 
