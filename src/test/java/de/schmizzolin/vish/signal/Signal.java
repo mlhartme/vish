@@ -23,7 +23,6 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
@@ -60,23 +59,6 @@ public class Signal {
     }
 
 
-    static MethodHandle upcallHandle(Class<?> fi, String name, FunctionDescriptor fdesc) {
-        try {
-            return MH_LOOKUP.findVirtual(fi, name, fdesc.toMethodType());
-        } catch (Throwable ex) {
-            throw new AssertionError(ex);
-        }
-    }
-
-    static <Z> MemorySegment upcallStub(MethodHandle fiHandle, Z z, FunctionDescriptor fdesc, Arena scope) {
-        try {
-            fiHandle = fiHandle.bindTo(z);
-            return LINKER.upcallStub(fiHandle, fdesc, scope);
-        } catch (Throwable ex) {
-            throw new AssertionError(ex);
-        }
-    }
-
     //--
 
     static final FunctionDescriptor sigactionDescriptor = FunctionDescriptor.of(JAVA_INT,
@@ -100,20 +82,24 @@ public class Signal {
             JAVA_INT.withName("sa_flags")
     ).withName("sigaction");
 
-    static FunctionDescriptor sigactionHandlerDescriptor = FunctionDescriptor.ofVoid(JAVA_INT);
     static MemorySegment sigactionAllocate(sigaction.sa_handler fi, Arena scope) {
-        MethodHandle handle = upcallHandle(sigaction.sa_handler.class, "apply", sigactionHandlerDescriptor);
-        return upcallStub(handle, fi, sigactionHandlerDescriptor, scope);
+        try {
+            FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(JAVA_INT);
+            MethodHandle handle = MH_LOOKUP.findVirtual(sigaction.sa_handler.class, "apply", descriptor.toMethodType());
+            handle = handle.bindTo(fi);
+            return LINKER.upcallStub(handle, descriptor, scope);
+        } catch (NoSuchMethodException | IllegalAccessException ex) {
+            throw new AssertionError(ex);
+        }
     }
 
     public static class sigaction {
         static final VarHandle sa_handlerHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_handler"));
         static final VarHandle sa_maskHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_mask"));
+        static final VarHandle sa_flagsHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_flags"));
 
         public interface sa_handler {
             void apply(int _x0);
         }
-
-        static final VarHandle sa_flagsHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_flags"));
     }
 }
