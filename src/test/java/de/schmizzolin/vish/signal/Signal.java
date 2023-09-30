@@ -37,11 +37,7 @@ public class Signal {
     private static final MethodHandles.Lookup MH_LOOKUP = MethodHandles.lookup();
     private static final Linker LINKER = Linker.nativeLinker();
     private static final SymbolLookup SYMBOL_LOOKUP = LINKER.defaultLookup();
-    static final AddressLayout POINTER = ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
-
-    static MethodHandle downcallHandle(String name, FunctionDescriptor fdesc) {
-        return SYMBOL_LOOKUP.find(name).map(addr -> LINKER.downcallHandle(addr, fdesc)).orElseThrow();
-    }
+    private static final AddressLayout POINTER = ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
 
 
     public static void main(String[] args) throws Throwable {
@@ -50,8 +46,7 @@ public class Signal {
         MemorySegment struct = Arena.global().allocate(sigactionLayout);
         sigaction.sa_flagsHandle.set(struct, 0);
         sigaction.sa_maskHandle.set(struct, 0);
-        sigaction.sa_handlerHandle.set(struct,
-                sigactionAllocate(signal -> System.out.println("got signal " + signal), Arena.global()));
+        sigaction.sa_handlerHandle.set(struct, sigactionAllocate(Arena.global()));
         System.out.println("before");
         sigaction(30, struct, MemorySegment.NULL);
         System.out.println("after");
@@ -59,6 +54,9 @@ public class Signal {
     }
 
 
+    public static void handleSignal(int signal) {
+        System.out.println("got signal: " + signal);
+    }
     //--
 
     static final FunctionDescriptor sigactionDescriptor = FunctionDescriptor.of(JAVA_INT,
@@ -66,11 +64,12 @@ public class Signal {
             POINTER,
             POINTER
     );
-    private static final MethodHandle sigactionHandle = downcallHandle("sigaction", sigactionDescriptor);
+    private static final MethodHandle sigactionHandle
+            = SYMBOL_LOOKUP.find("sigaction").map(addr -> LINKER.downcallHandle(addr, sigactionDescriptor)).orElseThrow();
 
     public static int sigaction(int x0, MemorySegment x1, MemorySegment x2) {
         try {
-            return (int)sigactionHandle.invokeExact(x0, x1, x2);
+            return (int) sigactionHandle.invokeExact(x0, x1, x2);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
@@ -82,11 +81,10 @@ public class Signal {
             JAVA_INT.withName("sa_flags")
     ).withName("sigaction");
 
-    static MemorySegment sigactionAllocate(sigaction.sa_handler fi, Arena scope) {
+    static MemorySegment    sigactionAllocate(Arena scope) {
         try {
             FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(JAVA_INT);
-            MethodHandle handle = MH_LOOKUP.findVirtual(sigaction.sa_handler.class, "apply", descriptor.toMethodType());
-            handle = handle.bindTo(fi);
+            MethodHandle handle = MH_LOOKUP.findStatic(Signal.class, "handleSignal", descriptor.toMethodType());
             return LINKER.upcallStub(handle, descriptor, scope);
         } catch (NoSuchMethodException | IllegalAccessException ex) {
             throw new AssertionError(ex);
