@@ -2,34 +2,43 @@
 
 package de.schmizzolin.vish.signal;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 import java.lang.foreign.*;
 
-/**
- * {@snippet :
- * struct sigaction {
- *     void (*sa_handler)(int);
- *     int sa_mask;
- *     int sa_flags;
- * };
- * }
- */
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+
 public class sigaction {
+    static final StructLayout const$0 = MemoryLayout.structLayout(
+            RuntimeHelper.POINTER.withName("sa_handler"),
+            JAVA_INT.withName("sa_mask"),
+            JAVA_INT.withName("sa_flags")
+    ).withName("sigaction");
+    static final FunctionDescriptor const$1 = FunctionDescriptor.ofVoid(
+            JAVA_INT
+    );
+    static final MethodHandle const$2 = RuntimeHelper.upcallHandle(sigaction.sa_handler.class, "apply", const$1);
+    static final MethodHandle const$3 = RuntimeHelper.downcallHandle(
+            const$1
+    );
+    static final VarHandle const$4 = const$0.varHandle(MemoryLayout.PathElement.groupElement("sa_handler"));
+    static final VarHandle const$5 = const$0.varHandle(MemoryLayout.PathElement.groupElement("sa_mask"));
+
 
     public static MemoryLayout $LAYOUT() {
-        return constants$0.const$0;
+        return const$0;
     }
     public interface sa_handler {
 
         void apply(int _x0);
         static MemorySegment allocate(sa_handler fi, Arena scope) {
-            return RuntimeHelper.upcallStub(constants$0.const$2, fi, constants$0.const$1, scope);
+            return RuntimeHelper.upcallStub(const$2, fi, const$1, scope);
         }
         static sa_handler ofAddress(MemorySegment addr, Arena arena) {
             MemorySegment symbol = addr.reinterpret(arena, null);
             return (int __x0) -> {
                 try {
-                    constants$0.const$3.invokeExact(symbol, __x0);
+                    const$3.invokeExact(symbol, __x0);
                 } catch (Throwable ex$) {
                     throw new AssertionError("should not reach here", ex$);
                 }
@@ -38,13 +47,13 @@ public class sigaction {
     }
 
     public static void sa_handler$set(MemorySegment seg, MemorySegment x) {
-        constants$0.const$4.set(seg, x);
+        const$4.set(seg, x);
     }
     public static void sa_mask$set(MemorySegment seg, int x) {
-        constants$0.const$5.set(seg, x);
+        const$5.set(seg, x);
     }
 
-    static final VarHandle xxx = constants$0.const$0.varHandle(MemoryLayout.PathElement.groupElement("sa_flags"));
+    static final VarHandle xxx = const$0.varHandle(MemoryLayout.PathElement.groupElement("sa_flags"));
     public static void sa_flags$set(MemorySegment seg, int x) {
         xxx.set(seg, x);
     }

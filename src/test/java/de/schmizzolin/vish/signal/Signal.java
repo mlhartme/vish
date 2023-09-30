@@ -38,12 +38,12 @@ public class Signal {
         System.out.println("after");
         Thread.sleep(10000);
     }
-    static final FunctionDescriptor const$1 = FunctionDescriptor.of(JAVA_INT,
+    static final FunctionDescriptor sigactionDescriptor = FunctionDescriptor.of(JAVA_INT,
             JAVA_INT,
             RuntimeHelper.POINTER,
             RuntimeHelper.POINTER
     );
-    private static final MethodHandle sigactionHandle = RuntimeHelper.downcallHandle("sigaction", const$1);
+    private static final MethodHandle sigactionHandle = RuntimeHelper.downcallHandle("sigaction", sigactionDescriptor);
 
     public static int sigaction(int x0, MemorySegment x1, MemorySegment x2) {
         try {
