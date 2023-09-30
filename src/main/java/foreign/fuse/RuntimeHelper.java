@@ -29,8 +29,6 @@ import static java.lang.foreign.ValueLayout.*;
 final class RuntimeHelper {
 
     private static final Linker LINKER = Linker.nativeLinker();
-    private static final ClassLoader LOADER = RuntimeHelper.class.getClassLoader();
-    private static final MethodHandles.Lookup MH_LOOKUP = MethodHandles.lookup();
     private static final SymbolLookup SYMBOL_LOOKUP;
     private static final SegmentAllocator THROWING_ALLOCATOR = (x, y) -> { throw new AssertionError("should not reach here"); };
     static final AddressLayout POINTER = ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
@@ -78,7 +76,7 @@ final class RuntimeHelper {
 
     static MethodHandle upcallHandle(Class<?> fi, String name, FunctionDescriptor fdesc) {
         try {
-            return MH_LOOKUP.findVirtual(fi, name, fdesc.toMethodType());
+            return MethodHandles.lookup().findVirtual(fi, name, fdesc.toMethodType());
         } catch (Throwable ex) {
             throw new AssertionError(ex);
         }
