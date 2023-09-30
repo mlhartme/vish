@@ -18,22 +18,39 @@ package de.schmizzolin.vish.examples;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-import static java.lang.foreign.ValueLayout.ADDRESS;
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 
 /**
  * https://www.gnu.org/software/libc/manual/html_node/Advanced-Signal-Handling.html
  *
- * Signal Function Header:
- *    void (*signal(int, void (*)(int)))(int);
+ * Header
+ *     int sigaction(int, struct sigaction*, struct sigaction*);
+ *
+ *  struct sigaction {
+ *      union __sigaction_u __sigaction_u;
+ *      sigset_t sa_mask;
+ *      int sa_flags;
+ *  }
  */
-public class Upcall {
+public class UpcallStruct {
+    static final StructLayout SIGACTION = MemoryLayout.structLayout(
+            MemoryLayout.unionLayout(
+                    ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)).withName("__sa_handler"),
+                    ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE)).withName("__sa_sigaction")
+            ).withName("__sigaction_u"),
+            JAVA_INT.withName("sa_mask"),
+            JAVA_INT.withName("sa_flags")
+    ).withName("sigaction");
+
     public static void main(String[] args) throws Throwable {
         Downcall.printPid();
 
@@ -43,7 +60,7 @@ public class Upcall {
         MemorySegment signalAddress = stdlibs.find("signal").get();
 
         MethodHandle upHandle = MethodHandles.lookup()
-                .findStatic(Upcall.class, "signalHandler", MethodType.methodType(void.class, int.class));
+                .findStatic(UpcallStruct.class, "signalHandler", MethodType.methodType(void.class, int.class));
         MemorySegment upAddress = linker.upcallStub(upHandle, FunctionDescriptor.ofVoid(JAVA_INT), Arena.ofAuto());
 
         FunctionDescriptor signalDescriptor = FunctionDescriptor.of(ADDRESS, JAVA_INT, ADDRESS);
