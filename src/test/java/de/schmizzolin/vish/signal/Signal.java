@@ -102,8 +102,8 @@ public class Signal {
 
     static FunctionDescriptor sigactionHandlerDescriptor = FunctionDescriptor.ofVoid(JAVA_INT);
     static MemorySegment sigactionAllocate(sigaction.sa_handler fi, Arena scope) {
-        return upcallStub(upcallHandle(sigaction.sa_handler.class, "apply", sigactionHandlerDescriptor),
-                fi, sigactionHandlerDescriptor, scope);
+        MethodHandle handle = upcallHandle(sigaction.sa_handler.class, "apply", sigactionHandlerDescriptor);
+        return upcallStub(handle, fi, sigactionHandlerDescriptor, scope);
     }
 
     public static class sigaction {
