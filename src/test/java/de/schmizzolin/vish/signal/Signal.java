@@ -52,7 +52,7 @@ public class Signal {
         sigaction.sa_flagsHandle.set(struct, 0);
         sigaction.sa_maskHandle.set(struct, 0);
         sigaction.sa_handlerHandle.set(struct,
-                sigaction.sa_handler.allocate(signal -> System.out.println("got signal " + signal), Arena.global()));
+                sigactionAllocate(signal -> System.out.println("got signal " + signal), Arena.global()));
         System.out.println("before");
         sigaction(30, struct, MemorySegment.NULL);
         System.out.println("after");
@@ -100,29 +100,18 @@ public class Signal {
             JAVA_INT.withName("sa_flags")
     ).withName("sigaction");
 
+    static FunctionDescriptor sigactionHandlerDescriptor = FunctionDescriptor.ofVoid(JAVA_INT);
+    static MemorySegment sigactionAllocate(sigaction.sa_handler fi, Arena scope) {
+        return upcallStub(upcallHandle(sigaction.sa_handler.class, "apply", sigactionHandlerDescriptor),
+                fi, sigactionHandlerDescriptor, scope);
+    }
+
     public static class sigaction {
-        static final FunctionDescriptor const$1 = FunctionDescriptor.ofVoid(
-                JAVA_INT
-        );
-        static final MethodHandle const$3 = LINKER.downcallHandle(const$1);
         static final VarHandle sa_handlerHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_handler"));
         static final VarHandle sa_maskHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_mask"));
 
         public interface sa_handler {
             void apply(int _x0);
-            static MemorySegment allocate(sa_handler fi, Arena scope) {
-                return upcallStub(upcallHandle(sa_handler.class, "apply", const$1), fi, const$1, scope);
-            }
-            static sa_handler ofAddress(MemorySegment addr, Arena arena) {
-                MemorySegment symbol = addr.reinterpret(arena, null);
-                return (int __x0) -> {
-                    try {
-                        const$3.invokeExact(symbol, __x0);
-                    } catch (Throwable ex$) {
-                        throw new AssertionError("should not reach here", ex$);
-                    }
-                };
-            }
         }
 
         static final VarHandle sa_flagsHandle = sigactionLayout.varHandle(MemoryLayout.PathElement.groupElement("sa_flags"));
