@@ -43,8 +43,10 @@ public class sigaction {
     public static void sa_mask$set(MemorySegment seg, int x) {
         constants$0.const$5.set(seg, x);
     }
+
+    static final VarHandle xxx = constants$0.const$0.varHandle(MemoryLayout.PathElement.groupElement("sa_flags"));
     public static void sa_flags$set(MemorySegment seg, int x) {
-        constants$1.const$0.set(seg, x);
+        xxx.set(seg, x);
     }
     public static MemorySegment allocate(SegmentAllocator allocator) { return allocator.allocate($LAYOUT()); }
 }

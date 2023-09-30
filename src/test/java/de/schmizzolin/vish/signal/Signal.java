@@ -18,8 +18,11 @@ package de.schmizzolin.vish.signal;
 import de.schmizzolin.vish.examples.Downcall;
 
 import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
+
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 public class Signal {
     public static void main(String[] args) throws Throwable {
@@ -35,15 +38,16 @@ public class Signal {
         System.out.println("after");
         Thread.sleep(10000);
     }
-
-    private static MethodHandle sigaction$MH() {
-        return RuntimeHelper.requireNonNull(constants$1.const$2,"sigaction");
-    }
+    static final FunctionDescriptor const$1 = FunctionDescriptor.of(JAVA_INT,
+            JAVA_INT,
+            RuntimeHelper.POINTER,
+            RuntimeHelper.POINTER
+    );
+    private static final MethodHandle sigactionHandle = RuntimeHelper.downcallHandle("sigaction", const$1);
 
     public static int sigaction(int x0, MemorySegment x1, MemorySegment x2) {
-        var mh$ = sigaction$MH();
         try {
-            return (int)mh$.invokeExact(x0, x1, x2);
+            return (int)sigactionHandle.invokeExact(x0, x1, x2);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }
