@@ -34,18 +34,17 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
  * https://www.gnu.org/software/libc/manual/html_node/Advanced-Signal-Handling.html
  */
 public class Signal {
-    private static final MethodHandles.Lookup MH_LOOKUP = MethodHandles.lookup();
     private static final Linker LINKER = Linker.nativeLinker();
-    private static final SymbolLookup SYMBOL_LOOKUP = LINKER.defaultLookup();
+    private static final SymbolLookup LOOKUP = LINKER.defaultLookup();
     private static final AddressLayout POINTER = ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
 
 
     public static void main(String[] args) throws Throwable {
-        try (Arena arena = Arena.ofConfined()) {
-            Getpid.printPid();
+        Getpid.printPid();
 
+        try (Arena arena = Arena.ofConfined()) {
             MemorySegment handler = allocateHandlerStub(arena);
-            MemorySegment struct = allocateStruct(handler, arena);
+            MemorySegment struct = allocateStruct(arena, handler, 0, 0);
             sigaction(30, struct, MemorySegment.NULL);
 
             Thread.sleep(10000);
@@ -61,7 +60,7 @@ public class Signal {
     static MemorySegment allocateHandlerStub(Arena arena) {
         try {
             FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(JAVA_INT);
-            MethodHandle handle = MH_LOOKUP.findStatic(Signal.class, "handleSignal", descriptor.toMethodType());
+            MethodHandle handle = MethodHandles.lookup().findStatic(Signal.class, "handleSignal", descriptor.toMethodType());
             return LINKER.upcallStub(handle, descriptor, arena);
         } catch (NoSuchMethodException | IllegalAccessException ex) {
             throw new AssertionError(ex);
@@ -70,7 +69,7 @@ public class Signal {
 
     //-- struct
 
-    private static MemorySegment allocateStruct(MemorySegment handler, Arena arena) {
+    private static MemorySegment allocateStruct(Arena arena, MemorySegment handler, int mask, int flags) {
         StructLayout layout = MemoryLayout.structLayout(
                 POINTER.withName("sa_handler"),
                 JAVA_INT.withName("sa_mask"),
@@ -79,8 +78,8 @@ public class Signal {
 
         MemorySegment struct = arena.allocate(layout);
         layout.varHandle(element("sa_handler")).set(struct, handler);
-        layout.varHandle(element("sa_mask")).set(struct, 0);
-        layout.varHandle(element("sa_flags")).set(struct, 0);
+        layout.varHandle(element("sa_mask")).set(struct, mask);
+        layout.varHandle(element("sa_flags")).set(struct, flags);
         return struct;
     }
     private static MemoryLayout.PathElement element(String name) {
@@ -89,13 +88,12 @@ public class Signal {
 
     //-- downcall
 
-    static final FunctionDescriptor sigactionDescriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, POINTER, POINTER);
-    private static final MethodHandle sigactionHandle = SYMBOL_LOOKUP.find("sigaction")
-            .map(addr -> LINKER.downcallHandle(addr, sigactionDescriptor)).orElseThrow();
-
     public static int sigaction(int signum, MemorySegment act, MemorySegment oldact) {
+        FunctionDescriptor descriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, POINTER, POINTER);
+        MethodHandle handle = LINKER.downcallHandle(LOOKUP.find("sigaction").get(), descriptor);
+
         try {
-            return (int) sigactionHandle.invokeExact(signum, act, oldact);
+            return (int) handle.invokeExact(signum, act, oldact);
         } catch (Throwable e) {
             throw new AssertionError("should not reach here", e);
         }

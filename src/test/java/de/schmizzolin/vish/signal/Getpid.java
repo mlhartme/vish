@@ -34,8 +34,7 @@ public class Getpid {
         Linker linker = Linker.nativeLinker();
         SymbolLookup stdlibs = linker.defaultLookup();
         MemorySegment address = stdlibs.find("getpid").get();
-        FunctionDescriptor descriptor = FunctionDescriptor.of(JAVA_INT);
-        MethodHandle handle = linker.downcallHandle(address, descriptor);
+        MethodHandle handle = linker.downcallHandle(address, FunctionDescriptor.of(JAVA_INT));
         int pid = (int) handle.invoke();
         System.out.println("pid: " + pid);
     }
