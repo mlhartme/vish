@@ -15,7 +15,6 @@
  */
 package de.schmizzolin.vish.signal;
 
-import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -23,21 +22,18 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.ADDRESS;
 
 /**
  * https://www.gnu.org/software/libc/manual/html_node/Advanced-Signal-Handling.html
  */
 public class Signal {
-    private static final Linker LINKER = Linker.nativeLinker();
-    private static final SymbolLookup LOOKUP = LINKER.defaultLookup();
-    private static final AddressLayout POINTER = ValueLayout.ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
-
+    static final Linker LINKER = Linker.nativeLinker();
+    static final SymbolLookup LOOKUP = LINKER.defaultLookup();
 
     public static void main(String[] args) throws Throwable {
         Getpid.printPid();
@@ -53,7 +49,7 @@ public class Signal {
 
     //-- upcall
 
-    public static void handleSignal(int signal) {
+    static void handleSignal(int signal) {
         System.out.println("got signal: " + signal);
     }
 
@@ -69,9 +65,9 @@ public class Signal {
 
     //-- struct
 
-    private static MemorySegment allocateStruct(Arena arena, MemorySegment handler, int mask, int flags) {
+    static MemorySegment allocateStruct(Arena arena, MemorySegment handler, int mask, int flags) {
         StructLayout layout = MemoryLayout.structLayout(
-                POINTER.withName("sa_handler"),
+                ADDRESS.withName("sa_handler"),
                 JAVA_INT.withName("sa_mask"),
                 JAVA_INT.withName("sa_flags")
         ).withName("sigaction");
@@ -82,20 +78,15 @@ public class Signal {
         layout.varHandle(element("sa_flags")).set(struct, flags);
         return struct;
     }
-    private static MemoryLayout.PathElement element(String name) {
+    static MemoryLayout.PathElement element(String name) {
         return MemoryLayout.PathElement.groupElement(name);
     }
 
     //-- downcall
 
-    public static int sigaction(int signum, MemorySegment act, MemorySegment oldact) {
-        FunctionDescriptor descriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, POINTER, POINTER);
+    static int sigaction(int signum, MemorySegment act, MemorySegment oldact) throws Throwable {
+        FunctionDescriptor descriptor = FunctionDescriptor.of(JAVA_INT, JAVA_INT, ADDRESS, ADDRESS);
         MethodHandle handle = LINKER.downcallHandle(LOOKUP.find("sigaction").get(), descriptor);
-
-        try {
-            return (int) handle.invokeExact(signum, act, oldact);
-        } catch (Throwable e) {
-            throw new AssertionError("should not reach here", e);
-        }
+        return (int) handle.invokeExact(signum, act, oldact);
     }
 }
