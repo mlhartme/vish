@@ -140,8 +140,8 @@ public abstract class Filesystem {
                 fuse_operations.readdir.allocate(
                         (path, buffer, filler, offset, fileInfo) -> {
                             fuse_fill_dir_t f = fuse_fill_dir_t.ofAddress(filler, Arena.global());
-                            Consumer<String> consumer = str -> f.apply(buffer, arena.allocateUtf8String(str), MemorySegment.NULL, 0);
-                            try {
+                            try (Arena local = Arena.ofConfined()) {
+                                Consumer<String> consumer = str -> f.apply(buffer, local.allocateUtf8String(str), MemorySegment.NULL, 0);
                                 readDir(path.getUtf8String(0), consumer);
                                 return 0;
                             } catch (ErrnoException e) {
