@@ -125,7 +125,7 @@ public abstract class Filesystem {
                 fuse_operations.getattr.allocate(
                         (path, statPtr) -> {
                             try {
-                                getAttr(path.getUtf8String(0), stat.ofAddress(statPtr, arena));
+                                getAttr(path.getUtf8String(0), stat.ofAddress(statPtr, Arena.global()));
                                 return 0;
                             } catch (ErrnoException e) {
                                 if (e.getCause() != null) {
@@ -139,7 +139,7 @@ public abstract class Filesystem {
         fuse_operations.readdir$set(operations,
                 fuse_operations.readdir.allocate(
                         (path, buffer, filler, offset, fileInfo) -> {
-                            fuse_fill_dir_t f = fuse_fill_dir_t.ofAddress(filler, arena);
+                            fuse_fill_dir_t f = fuse_fill_dir_t.ofAddress(filler, Arena.global());
                             Consumer<String> consumer = str -> f.apply(buffer, arena.allocateUtf8String(str), MemorySegment.NULL, 0);
                             try {
                                 readDir(path.getUtf8String(0), consumer);
@@ -155,7 +155,7 @@ public abstract class Filesystem {
         fuse_operations.read$set(operations,
                 fuse_operations.read.allocate(
                         (path, buffer, count, offset, info) -> {
-                            ByteBuffer bb = MemorySegment.ofAddress(buffer.address()).reinterpret(count).asByteBuffer();
+                            ByteBuffer bb = buffer.reinterpret(count).asByteBuffer();
                             try {
                                 return read(path.getUtf8String(0), bb, toInt(offset));
                             } catch (ErrnoException e) {
