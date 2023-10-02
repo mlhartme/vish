@@ -20,14 +20,13 @@ import com.bettercloud.vault.VaultException;
 import com.bettercloud.vault.json.Json;
 import com.bettercloud.vault.json.JsonObject;
 import com.bettercloud.vault.response.LogicalResponse;
+import de.schmizzolin.vish.fuse.Attr;
 import de.schmizzolin.vish.fuse.Filesystem;
 import de.schmizzolin.vish.fuse.Errno;
 import de.schmizzolin.vish.fuse.ErrnoException;
 import de.schmizzolin.vish.util.Stdlib;
-import foreign.fuse.stat;
 
 import java.io.PrintWriter;
-import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
@@ -81,10 +80,8 @@ public class VaultFs extends Filesystem {
     //-- filesystem implementation
 
     @Override
-    public void getAttr(String path, MemorySegment statAddr) throws ErrnoException {
-        stat.st_uid$set(statAddr, Stdlib.geteuid());
-        stat.st_gid$set(statAddr, Stdlib.getegid());
-        getPath(path).getAttr(statAddr);
+    public Attr getAttr(String path) throws ErrnoException {
+        return getPath(path).getAttr();
     }
 
     @Override

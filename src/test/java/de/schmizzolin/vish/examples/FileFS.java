@@ -15,12 +15,10 @@
  */
 package de.schmizzolin.vish.examples;
 
+import de.schmizzolin.vish.fuse.Attr;
 import de.schmizzolin.vish.fuse.Filesystem;
 import de.schmizzolin.vish.fuse.Errno;
 import de.schmizzolin.vish.fuse.ErrnoException;
-import de.schmizzolin.vish.util.Stdlib;
-import foreign.fuse.fuse_h;
-import foreign.fuse.stat;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
@@ -36,18 +34,13 @@ public class FileFS extends Filesystem {
         this.contents = contents.getBytes(StandardCharsets.UTF_8);
     }
 
-    public void getAttr(String path, MemorySegment statAddr) throws ErrnoException {
+    public Attr getAttr(String path) throws ErrnoException {
         switch (path) {
             case "/" -> {
-                stat.st_mode$set(statAddr, (short) (fuse_h.S_IFDIR() | 0755));
-                stat.st_uid$set(statAddr, Stdlib.geteuid());
-                stat.st_gid$set(statAddr, Stdlib.getegid());
+                return Attr.directory(0);
             }
             case "/" + NAME -> {
-                stat.st_mode$set(statAddr, (short) (fuse_h.S_IFREG() | 0444));
-                stat.st_size$set(statAddr, contents.length);
-                stat.st_uid$set(statAddr, Stdlib.geteuid());
-                stat.st_gid$set(statAddr, Stdlib.getegid());
+                return Attr.file(contents.length, 0);
             }
             default -> throw new ErrnoException(Errno.ENOENT);
         }

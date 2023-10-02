@@ -15,9 +15,8 @@
  */
 package de.schmizzolin.vish.vault;
 
+import de.schmizzolin.vish.fuse.Attr;
 import de.schmizzolin.vish.fuse.ErrnoException;
-
-import java.lang.foreign.MemorySegment;
 
 /** File or directory */
 public abstract class VaultNode {
@@ -48,5 +47,5 @@ public abstract class VaultNode {
         return null;
     }
 
-    protected abstract void getAttr(MemorySegment stat) throws ErrnoException;
+    protected abstract Attr getAttr() throws ErrnoException;
 }

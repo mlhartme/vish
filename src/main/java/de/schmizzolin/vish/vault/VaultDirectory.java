@@ -17,13 +17,10 @@ package de.schmizzolin.vish.vault;
 
 import com.bettercloud.vault.VaultException;
 import com.bettercloud.vault.response.LogicalResponse;
+import de.schmizzolin.vish.fuse.Attr;
 import de.schmizzolin.vish.fuse.Errno;
 import de.schmizzolin.vish.fuse.ErrnoException;
-import foreign.fuse.fuse_h;
-import foreign.fuse.stat;
-import foreign.fuse.timespec;
 
-import java.lang.foreign.MemorySegment;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,9 +92,8 @@ public class VaultDirectory extends VaultNode {
     }
 
     @Override
-    protected void getAttr(MemorySegment statAddr) {
-        stat.st_mode$set(statAddr, (short) (fuse_h.S_IFDIR() | 0700));
-        timespec.tv_sec$set(stat.st_mtimespec$slice(statAddr), modified);
+    protected Attr getAttr() {
+        return Attr.directory(modified);
     }
 
     public void read(Consumer<String> filler) throws ErrnoException {

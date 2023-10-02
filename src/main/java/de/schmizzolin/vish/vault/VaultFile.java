@@ -15,12 +15,9 @@
  */
 package de.schmizzolin.vish.vault;
 
+import de.schmizzolin.vish.fuse.Attr;
 import de.schmizzolin.vish.fuse.ErrnoException;
-import foreign.fuse.fuse_h;
-import foreign.fuse.stat;
-import foreign.fuse.timespec;
 
-import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 
 public class VaultFile extends VaultNode {
@@ -34,10 +31,8 @@ public class VaultFile extends VaultNode {
     }
 
     @Override
-    protected void getAttr(MemorySegment statAddr) {
-        stat.st_mode$set(statAddr, (short) (fuse_h.S_IFREG() | 0600));
-        stat.st_size$set(statAddr, bytes.length);
-        timespec.tv_sec$set(stat.st_mtimespec$slice(statAddr), modified);
+    protected Attr getAttr() {
+        return Attr.file(bytes.length, modified);
     }
 
     public int read(ByteBuffer buffer, int offset) throws ErrnoException {

@@ -15,11 +15,13 @@
  */
 package de.schmizzolin.vish.fuse;
 
+import de.schmizzolin.vish.util.Stdlib;
 import foreign.fuse.fuse_args;
 import foreign.fuse.fuse_fill_dir_t;
 import foreign.fuse.fuse_h;
 import foreign.fuse.fuse_operations;
 import foreign.fuse.stat;
+import foreign.fuse.timespec;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -51,7 +53,7 @@ public abstract class Filesystem {
 
     //-- file system methods
 
-    public abstract void getAttr(String path, MemorySegment statAddr) throws ErrnoException;
+    public abstract Attr getAttr(String path) throws ErrnoException;
     public abstract void readDir(String path, Consumer<String> filler) throws ErrnoException;
 
     /** @param offset into src file, not dest buffer */
@@ -125,7 +127,14 @@ public abstract class Filesystem {
                 fuse_operations.getattr.allocate(
                         (path, statPtr) -> {
                             try {
-                                getAttr(path.getUtf8String(0), stat.ofAddress(statPtr, Arena.global()));
+                                var attr = getAttr(path.getUtf8String(0));
+                                var statAddr = stat.ofAddress(statPtr, Arena.global());
+                                stat.st_mode$set(statAddr, attr.mode());
+                                stat.st_size$set(statAddr, attr.size());
+                                timespec.tv_sec$set(stat.st_mtimespec$slice(statAddr), attr.lastModified());
+                                stat.st_uid$set(statAddr, Stdlib.geteuid());
+                                stat.st_gid$set(statAddr, Stdlib.getegid());
+
                                 return 0;
                             } catch (ErrnoException e) {
                                 if (e.getCause() != null) {
