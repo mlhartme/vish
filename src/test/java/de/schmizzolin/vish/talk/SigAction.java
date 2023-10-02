@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.schmizzolin.vish.signal;
+package de.schmizzolin.vish.talk;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -25,13 +25,13 @@ import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 /**
  * https://www.gnu.org/software/libc/manual/html_node/Advanced-Signal-Handling.html
  */
-public class Signal {
+public class SigAction {
     static final Linker LINKER = Linker.nativeLinker();
     static final SymbolLookup LOOKUP = LINKER.defaultLookup();
 
@@ -56,7 +56,7 @@ public class Signal {
     static MemorySegment allocateHandlerStub(Arena arena) {
         try {
             FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(JAVA_INT);
-            MethodHandle handle = MethodHandles.lookup().findStatic(Signal.class, "handleSignal", descriptor.toMethodType());
+            MethodHandle handle = MethodHandles.lookup().findStatic(SigAction.class, "handleSignal", descriptor.toMethodType());
             return LINKER.upcallStub(handle, descriptor, arena);
         } catch (NoSuchMethodException | IllegalAccessException ex) {
             throw new AssertionError(ex);

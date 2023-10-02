@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.schmizzolin.vish.signal;
+package de.schmizzolin.vish.talk;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -24,18 +24,20 @@ import java.lang.invoke.MethodHandle;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 public class Getpid {
-    /**
-     * https://www.gnu.org/software/libc/manual/html_node/Process-Identification.html
-     */
     public static void main(String[] args) throws Throwable {
         printPid();
     }
+
+    /**
+     * https://www.gnu.org/software/libc/manual/html_node/Process-Identification.html
+     *
+     * Essentially <code>int getpid();</code>
+     */
     public static void printPid() throws Throwable {
         Linker linker = Linker.nativeLinker();
-        SymbolLookup stdlibs = linker.defaultLookup();
-        MemorySegment address = stdlibs.find("getpid").get();
-        MethodHandle handle = linker.downcallHandle(address, FunctionDescriptor.of(JAVA_INT));
-        int pid = (int) handle.invoke();
-        System.out.println("pid: " + pid);
+        SymbolLookup lookup = linker.defaultLookup();
+        MemorySegment addr = lookup.find("getpid").get();
+        MethodHandle handle = linker.downcallHandle(addr, FunctionDescriptor.of(JAVA_INT));
+        System.out.println("pid: " + handle.invoke());
     }
 }
