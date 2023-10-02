@@ -35,6 +35,8 @@ import java.util.function.Consumer;
 
 public abstract class Filesystem {
     protected final PrintWriter log;
+    private final int euid;
+    private final int egid;
 
     protected Filesystem() {
         this(new PrintWriter(System.out));
@@ -45,6 +47,9 @@ public abstract class Filesystem {
             throw new IllegalArgumentException();
         }
         this.log = log;
+        this.euid = Stdlib.geteuid();
+        this.egid = Stdlib.getegid();
+
     }
 
     public String name() {
@@ -132,8 +137,8 @@ public abstract class Filesystem {
                                 stat.st_mode$set(statAddr, attr.mode());
                                 stat.st_size$set(statAddr, attr.size());
                                 timespec.tv_sec$set(stat.st_mtimespec$slice(statAddr), attr.lastModified());
-                                stat.st_uid$set(statAddr, Stdlib.geteuid());
-                                stat.st_gid$set(statAddr, Stdlib.getegid());
+                                stat.st_uid$set(statAddr, euid);
+                                stat.st_gid$set(statAddr, egid);
 
                                 return 0;
                             } catch (ErrnoException e) {
