@@ -23,22 +23,36 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
-public class Getpwnam {
+/**
+ * https://www.gnu.org/software/libc/manual/html_node/Process-Identification.html
+ *
+ * Essentially <code>int getpid();</code>
+ */
+public class Demo {
     public static void main(String[] args) throws Throwable {
+        printPid();
         printPwnam("mhm");
+
+        printSignal30();
     }
 
-    private static MethodHandle downcall(String name, MemoryLayout result, MemoryLayout ... arguments) {
-        Linker linker = Linker.nativeLinker();
-        SymbolLookup lookup = linker.defaultLookup();
-        MemorySegment addr = lookup.find(name).get();
-        return linker.downcallHandle(addr, FunctionDescriptor.of(result, arguments));
+    private static final Linker LINKER = Linker.nativeLinker();
+
+    public static MethodHandle downcall(String name, MemoryLayout result, MemoryLayout ... args) {
+        MemorySegment addr = LINKER.defaultLookup().find(name).get();
+        return LINKER.downcallHandle(addr, FunctionDescriptor.of(result, args));
+    }
+
+    public static void printPid() throws Throwable {
+        MethodHandle getpid = downcall("getpid", JAVA_INT);
+        System.out.println("pid: " + getpid.invoke());
     }
 
     public static void printPwnam(String name) throws Throwable {
@@ -64,4 +78,23 @@ public class Getpwnam {
         }
     }
 
+    //-- upcall
+
+    public static void printSignal30() throws Throwable {
+        MemorySegment handler = upcall(Demo.class, "signalPrinter", JAVA_INT);
+
+        MethodHandle signal = downcall("signal", ADDRESS, JAVA_INT, ADDRESS);
+        signal.invoke(30, handler);
+        Thread.sleep(10000);
+    }
+
+    public static void signalPrinter(int signal) {
+        System.out.println("got signal: " + signal);
+    }
+
+    public static MemorySegment upcall(Class<?> clazz, String method, MemoryLayout... args) throws NoSuchMethodException, IllegalAccessException {
+        FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(args);
+        MethodHandle handle = MethodHandles.lookup().findStatic(clazz, method, descriptor.toMethodType());
+        return LINKER.upcallStub(handle, descriptor, Arena.global());
+    }
 }
