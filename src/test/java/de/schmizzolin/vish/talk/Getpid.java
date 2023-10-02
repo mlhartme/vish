@@ -17,27 +17,30 @@ package de.schmizzolin.vish.talk;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 
+/**
+ * https://www.gnu.org/software/libc/manual/html_node/Process-Identification.html
+ *
+ * Essentially <code>int getpid();</code>
+ */
 public class Getpid {
     public static void main(String[] args) throws Throwable {
         printPid();
     }
 
-    /**
-     * https://www.gnu.org/software/libc/manual/html_node/Process-Identification.html
-     *
-     * Essentially <code>int getpid();</code>
-     */
-    public static void printPid() throws Throwable {
+    public static MethodHandle downcall(String name, MemoryLayout result, MemoryLayout ... args) {
         Linker linker = Linker.nativeLinker();
-        SymbolLookup lookup = linker.defaultLookup();
-        MemorySegment addr = lookup.find("getpid").get();
-        MethodHandle handle = linker.downcallHandle(addr, FunctionDescriptor.of(JAVA_INT));
-        System.out.println("pid: " + handle.invoke());
+        MemorySegment addr = linker.defaultLookup().find(name).get();
+        return linker.downcallHandle(addr, FunctionDescriptor.of(result, args));
+    }
+
+    public static void printPid() throws Throwable {
+        MethodHandle getpid = downcall("getpid", JAVA_INT);
+        System.out.println("pid: " + getpid.invoke());
     }
 }

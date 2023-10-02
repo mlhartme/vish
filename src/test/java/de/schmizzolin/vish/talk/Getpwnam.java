@@ -20,57 +20,48 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
-// From pwd.h on mac os
-//  struct passwd {
-//        char    *pw_name;               /* user name */
-//        char    *pw_passwd;             /* encrypted password */
-//                uid_t   pw_uid;                 /* user uid */
-//                gid_t   pw_gid;                 /* user gid */
-//                __darwin_time_t pw_change;              /* password change time */
-//                char    *pw_class;              /* user access class */
-//                char    *pw_gecos;              /* Honeywell login info */
-//                char    *pw_dir;                /* home directory */
-//                char    *pw_shell;              /* default shell */
-//                __darwin_time_t pw_expire;              /* account expiration */
-//              };
 public class Getpwnam {
     public static void main(String[] args) throws Throwable {
         printPwnam("mhm");
     }
 
-    public static void printPwnam(String name) throws Throwable {
+    private static MethodHandle downcall(String name, MemoryLayout result, MemoryLayout ... arguments) {
         Linker linker = Linker.nativeLinker();
         SymbolLookup lookup = linker.defaultLookup();
-        MemorySegment addr = lookup.find("getpwnam").get();
+        MemorySegment addr = lookup.find(name).get();
+        return linker.downcallHandle(addr, FunctionDescriptor.of(result, arguments));
+    }
+
+    public static void printPwnam(String name) throws Throwable {
+        ValueLayout C_STRING = ADDRESS.withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
         MemoryLayout layout = MemoryLayout.structLayout(
-                ADDRESS.withName("name"),
-                ADDRESS.withName("passwd"),
+                C_STRING.withName("name"),
+                C_STRING.withName("passwd"),
                 JAVA_INT.withName("uid"),
                 JAVA_INT.withName("gid"),
                 JAVA_LONG.withName("change"),
-                ADDRESS.withName("class"),
-                ADDRESS.withName("gecos"),
-                ADDRESS.withName("dir"),
-                ADDRESS.withName("shell")
+                C_STRING.withName("class"),
+                C_STRING.withName("info"),
+                C_STRING.withName("dir"),
+                C_STRING.withName("shell")
         );
-        MethodHandle handle = linker.downcallHandle(addr, FunctionDescriptor.of(ADDRESS, ADDRESS));
-        MemorySegment struct = (MemorySegment) handle.invoke(Arena.ofAuto().allocateUtf8String(name));
+        MethodHandle getpwnam = downcall("getpwnam", ADDRESS.withTargetLayout(layout), C_STRING);
+        MemorySegment struct = (MemorySegment) getpwnam.invoke(Arena.ofAuto().allocateUtf8String(name));
         if (struct.address() == 0) {
             System.out.println("not found: " + name);
-            return;
+        } else {
+            MemorySegment info = (MemorySegment) layout.varHandle(MemoryLayout.PathElement.groupElement("info")).get(struct);
+            System.out.println(name + " info: " + info.getUtf8String(0));
         }
-        struct = struct.reinterpret(layout.byteSize());
-        MemorySegment nameAddr = (MemorySegment) layout.varHandle(MemoryLayout.PathElement.groupElement("gecos")).get(struct);
-        nameAddr = nameAddr.reinterpret(100); // TODO
-        System.out.println("name: " + nameAddr.getUtf8String(0));
     }
+
 }
