@@ -69,7 +69,6 @@ public class Getpwnam {
             return;
         }
         struct = struct.reinterpret(layout.byteSize());
-        // TODO: shell is symbolic name ...
         MemorySegment nameAddr = (MemorySegment) layout.varHandle(MemoryLayout.PathElement.groupElement("gecos")).get(struct);
         nameAddr = nameAddr.reinterpret(100); // TODO
         System.out.println("name: " + nameAddr.getUtf8String(0));

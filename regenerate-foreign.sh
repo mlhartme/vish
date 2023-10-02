@@ -14,7 +14,7 @@ echo "wiping old bindings ..."
 rm -rf src/main/java/foreign
 mkdir src/main/java/foreign
 
-include=/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk/usr/include
+include=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
 echo "generate fuse bindings ..."
 jextract -D "FUSE_USE_VERSION=29" "-D_FILE_OFFSET_BITS=64" \
 	--include-function fuse_main_real \

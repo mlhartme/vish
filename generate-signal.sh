@@ -10,6 +10,6 @@ echo "wiping old bindings ..."
 rm -rf target/signal
 mkdir target/signal
 
-include=/Library/Developer/CommandLineTools/SDKs/MacOSX14.sdk/usr/include
+include=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
 echo "generate simple signal bindings ..."
 jextract --source --output target/signal -t foreign.signal -I $include simple_signal.h
