@@ -20,7 +20,6 @@ import de.schmizzolin.vish.fuse.Filesystem;
 import de.schmizzolin.vish.fuse.Errno;
 import de.schmizzolin.vish.fuse.ErrnoException;
 
-import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
@@ -35,15 +34,11 @@ public class FileFS extends Filesystem {
     }
 
     public Attr getAttr(String path) throws ErrnoException {
-        switch (path) {
-            case "/" -> {
-                return Attr.directory(0);
-            }
-            case "/" + NAME -> {
-                return Attr.file(contents.length, 0);
-            }
+        return switch (path) {
+            case "/" -> Attr.directory(0);
+            case "/" + NAME -> Attr.file(contents.length, 0);
             default -> throw new ErrnoException(Errno.ENOENT);
-        }
+        };
     }
 
     public void readDir(String path, Consumer<String> dest) throws ErrnoException {
