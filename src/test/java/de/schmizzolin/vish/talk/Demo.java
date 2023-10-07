@@ -83,7 +83,7 @@ public class Demo {
         return LINKER.downcallHandle(addr, desc);
     }
 
-    private static MemorySegment upcall(String name, FunctionDescriptor desc) throws NoSuchMethodException, IllegalAccessException {
+    private static MemorySegment upcall(String name, FunctionDescriptor desc) throws Throwable {
         MethodHandle handle = MethodHandles.lookup().findStatic(Demo.class, name, desc.toMethodType());
         return LINKER.upcallStub(handle, desc, Arena.global());
     }
