@@ -43,11 +43,14 @@ public class Demo {
                 ValueLayout.ADDRESS.withName("passwd"),
                 ValueLayout.JAVA_INT.withName("uid")
         );
-        var getpwnam = downcall("getpwnam", desc(ValueLayout.ADDRESS.withTargetLayout(layout), ValueLayout.ADDRESS));
-        var struct = (MemorySegment) getpwnam.invoke(Arena.ofAuto().allocateUtf8String(System.getProperty("user.name")));
-        var field = layout.varHandle(MemoryLayout.PathElement.groupElement("uid"));
-        var uid = (int) field.get(struct);
-        System.out.println("uid: " + uid);
+        try (Arena arena = Arena.ofConfined()) {
+            var getpwnam = downcall("getpwnam", desc(ValueLayout.ADDRESS.withTargetLayout(layout), ValueLayout.ADDRESS));
+            var cString = arena.allocateUtf8String(name);
+            var struct = (MemorySegment) getpwnam.invoke(cString);
+            var field = layout.varHandle(MemoryLayout.PathElement.groupElement("uid"));
+            var uid = (int) field.get(struct);
+            System.out.println("uid: " + uid);
+        }
     }
 }
 
