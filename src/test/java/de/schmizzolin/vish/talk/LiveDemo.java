@@ -9,7 +9,7 @@ public class LiveDemo {
 
     public static void main(String[] args) throws Throwable {
     }
-    
+
     //-- helper methods
 
     private static FunctionDescriptor desc(ValueLayout result, ValueLayout... args) {

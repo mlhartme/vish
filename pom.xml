@@ -5,7 +5,7 @@
   <parent>
     <groupId>de.schmizzolin.maven.poms</groupId>
     <artifactId>parent</artifactId>
-    <version>1.6.2</version>
+    <version>1.6.3</version>
   </parent>
 
   <name>Vish</name>
@@ -89,7 +89,7 @@
       <plugin>
         <groupId>net.oneandone.maven.plugins</groupId>
         <artifactId>application</artifactId>
-        <version>1.8.0-SNAPSHOT</version>
+        <version>1.8.0</version>
         <configuration>
           <name>vish</name>
           <main>de.schmizzolin.vish.Main</main>
