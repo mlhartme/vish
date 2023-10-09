@@ -10,28 +10,21 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
 
-public class UpDemo {
+public class MemoryDemo {
     private static final Linker LINKER = Linker.nativeLinker();
 
-    public static void signalHandler(int signal) {
-        System.out.println("got signal " + signal);
-    }
-
     // Header
-    //   typedef void (*handler_t)(int);                  // pointer to handler: void handler(int)
-    //   handler_t signal(int signum, handler_t action);  // register handler
+    //   struct passwd *getpwnam(char *);
+    //   struct passwd {
+    //        char    *name;
+    //        char    *passwd;
+    //        int     uid;
+    //        …
+    //   };
     public static void main(String[] args) throws Throwable {
         printpid();
-
-        FunctionDescriptor desc = FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT);
-        MethodHandle target = MethodHandles.lookup().findStatic(UpDemo.class, "signalHandler", desc.toMethodType());
-        MemorySegment stub = LINKER.upcallStub(target, desc, Arena.global());
-
-        downcall("signal", ValueLayout.ADDRESS, ValueLayout.JAVA_INT, ValueLayout.ADDRESS).invoke(30, stub);
-
-        System.out.println("waiting ...");
-        Thread.sleep(20000);
     }
+
     public static void printpid() throws Throwable {
         System.out.println("pid: " + downcall("getpid", ValueLayout.JAVA_INT).invoke());
     }
