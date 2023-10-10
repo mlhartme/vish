@@ -19,13 +19,30 @@ import de.schmizzolin.vish.fuse.Attr;
 import de.schmizzolin.vish.fuse.Filesystem;
 import de.schmizzolin.vish.fuse.Errno;
 import de.schmizzolin.vish.fuse.ErrnoException;
+import de.schmizzolin.vish.fuse.Mount;
 
+import java.io.Console;
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.function.Consumer;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** Serves a single file */
 public class FileFS extends Filesystem {
+    public static void main(String[] args) throws InterruptedException, IOException {
+        File dir = new File("target/single-volume");
+        try (Mount mount = new FileFS("Hello, TecDay\n").mount(dir, false)) {
+            System.out.println("mounted " + dir + " ...");
+            Thread.sleep(1000 * 60);
+        }
+        System.out.println("done");
+    }
+    
     private static final String NAME = "file";
     private final byte[] contents;
 
@@ -33,6 +50,7 @@ public class FileFS extends Filesystem {
         this.contents = contents.getBytes(StandardCharsets.UTF_8);
     }
 
+    @Override
     public Attr getAttr(String path) throws ErrnoException {
         return switch (path) {
             case "/" -> Attr.directory(0);
@@ -41,6 +59,7 @@ public class FileFS extends Filesystem {
         };
     }
 
+    @Override
     public void readDir(String path, Consumer<String> dest) throws ErrnoException {
         if (!"/".equals(path)) {
             throw new ErrnoException(Errno.ENOENT);
