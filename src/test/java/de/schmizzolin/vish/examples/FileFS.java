@@ -42,7 +42,7 @@ public class FileFS extends Filesystem {
         }
         System.out.println("done");
     }
-    
+
     private static final String NAME = "file";
     private final byte[] contents;
 
