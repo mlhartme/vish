@@ -34,12 +34,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** Serves a single file */
 public class FileFS extends Filesystem {
-    public static void main(String[] args) throws InterruptedException, IOException {
+    public static void main(String[] args) throws InterruptedException {
         File dir = new File("target/single-volume");
-        Mount mount = new FileFS("Hello, TecDay\n").mount(dir, false);
-            System.out.println("mounted " + dir + " ...");
-            Thread.sleep(1000 * 20);
-        System.out.println("done");
+        Mount mount = new FileFS("Hello, TecDay\n").mount(dir);
+        System.out.println("mounted " + dir + " ... press ctrl-c to quit.");
+        mount.join();
     }
 
     private static final String NAME = "file";

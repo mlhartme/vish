@@ -66,16 +66,16 @@ public abstract class Filesystem {
 
     //-- mount/unmount
 
-    public Mount mount(File dest, boolean debug) {
-        return mount(dest.getAbsolutePath(), debug);
+    public Mount mount(File dest) {
+        return mount(dest, false);
     }
 
-    public Mount mount(String dest, boolean debug) {
+    public Mount mount(File dest, boolean debug) {
         System.load("/usr/local/lib/libfuse.dylib");
-
+        String destPath = dest.getAbsolutePath();
         var arena = Arena.ofShared();
         try {
-            MemorySegment args = args(arena, dest, debug);
+            MemorySegment args = args(arena, destPath, debug);
             MemorySegment channel;
             MemorySegment mountpoint = fuse_args.argv$get(args).getAtIndex(ValueLayout.ADDRESS, fuse_args.argc$get(args) - 1);
             if (fuse_h.fuse_parse_cmdline(args, MemorySegment.NULL, MemorySegment.NULL, MemorySegment.NULL) ==-1) {
@@ -91,7 +91,7 @@ public abstract class Filesystem {
                 throw new IllegalArgumentException("new failed");
             }
 
-            return new Mount(arena, dest, fuse, channel);
+            return new Mount(arena, destPath, fuse, channel);
         } catch (Exception e) {
             arena.close();
             throw new RuntimeException("TODO", e);
