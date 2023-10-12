@@ -8,8 +8,9 @@ import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Represents a running mount point. Created by fuse filesystem, invoke close to unmount.
- * Uses a shutdown hook to make sure that close is called.
+ * Represents a running mount point. Invoke close to unmount.
+ * Created and returned by Filesystem.mount(), usually used in a try-with-resources block.
+ * Also sets up a shutdown hook to call close when not already done.
  */
 public class Mount extends Thread implements AutoCloseable {
     private final Arena arena;
