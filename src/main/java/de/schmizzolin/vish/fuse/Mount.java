@@ -1,10 +1,13 @@
 package de.schmizzolin.vish.fuse;
 
+import foreign.fuse.fuse_args;
 import foreign.fuse.fuse_h;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -13,6 +16,39 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Also sets up a shutdown hook to call close when not already done.
  */
 public class Mount extends Thread implements AutoCloseable {
+    public static Mount create(Filesystem filesystem, File dest, Options options) {
+        String name;
+        System.load("/usr/local/lib/libfuse.dylib");
+        String destPath = dest.getAbsolutePath();
+        name = options.getName();
+        if (name == null) {
+            name = filesystem.name();
+        }
+        var arena = Arena.ofShared();
+        try {
+            MemorySegment args = options.args(name, arena, destPath);
+            MemorySegment channel;
+            MemorySegment mountpoint = fuse_args.argv$get(args).getAtIndex(ValueLayout.ADDRESS, fuse_args.argc$get(args) - 1);
+            if (fuse_h.fuse_parse_cmdline(args, MemorySegment.NULL, MemorySegment.NULL, MemorySegment.NULL) ==-1) {
+                throw new IllegalArgumentException("TODO");
+            }
+            channel = fuse_h.fuse_mount(mountpoint, args);
+            if (channel == MemorySegment.NULL) {
+                throw new IllegalArgumentException("mount failed");
+            }
+            MemorySegment operations = options.createOperations(filesystem, arena);
+            MemorySegment fuse = fuse_h.fuse_new(channel, args, operations, operations.byteSize(), MemorySegment.NULL);
+            if (fuse == MemorySegment.NULL) {
+                throw new IllegalArgumentException("new failed");
+            }
+
+            return new Mount(arena, destPath, fuse, channel, options.getUmountTimeoutSeconds());
+        } catch (RuntimeException e) {
+            arena.close();
+            throw e;
+        }
+    }
+
     private final Arena arena;
 
     private final String mountpoint;

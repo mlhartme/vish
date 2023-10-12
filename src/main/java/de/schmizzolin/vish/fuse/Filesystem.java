@@ -39,6 +39,6 @@ public interface Filesystem {
     }
 
     default Mount mount(Options options, File dest) {
-        return options.apply(this, dest, name());
+        return Mount.create(this, dest, options);
     }
 }
