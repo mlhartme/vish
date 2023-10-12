@@ -35,10 +35,10 @@ public interface Filesystem {
     //-- mount/unmount
 
     default Mount mount(File dest) {
-        return mount(new Options(), dest);
+        return mount(dest, new Options());
     }
 
-    default Mount mount(Options options, File dest) {
+    default Mount mount(File dest, Options options) {
         return Mount.create(this, dest, options);
     }
 }

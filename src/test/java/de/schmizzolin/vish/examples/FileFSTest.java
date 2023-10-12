@@ -37,7 +37,7 @@ public class FileFSTest {
         content = content + content + content + content + content;
         content = content + content + content + content + content;
         FileFS fs = new FileFS(content);
-        try (Mount mount = fs.mount(new Options().debug(true), dir)) {
+        try (Mount mount = fs.mount(dir, new Options().debug(true))) {
             assertEquals(Arrays.asList("file"), Arrays.asList(dir.listFiles()).stream().map((file) -> file.getName()).toList());
             assertEquals(content, Files.readString(new File(dir, "file").toPath()));
         }
