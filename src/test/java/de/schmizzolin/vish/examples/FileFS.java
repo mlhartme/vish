@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class FileFS extends Filesystem {
     public static void main(String[] args) throws InterruptedException {
         File dir = new File("target/single-volume");
-        Mount mount = new FileFS("Hello, TecDay\n").mount(dir);
+        Mount mount = new FileFS("Hello, World\n").mount(dir);
         System.out.println("mounted " + dir + " ... press ctrl-c to quit.");
         mount.join();
     }
@@ -62,8 +62,6 @@ public class FileFS extends Filesystem {
         if (!"/".equals(path)) {
             throw new ErrnoException(Errno.ENOENT);
         }
-        dest.accept(".");
-        dest.accept("..");
         dest.accept(NAME);
     }
 

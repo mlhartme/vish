@@ -67,10 +67,10 @@ public abstract class Filesystem {
     //-- mount/unmount
 
     public Mount mount(File dest) {
-        return mount(dest, false);
+        return mount(dest, 5, false);
     }
 
-    public Mount mount(File dest, boolean debug) {
+    public Mount mount(File dest, int umountTimeoutSeconds, boolean debug) {
         System.load("/usr/local/lib/libfuse.dylib");
         String destPath = dest.getAbsolutePath();
         var arena = Arena.ofShared();
@@ -91,7 +91,7 @@ public abstract class Filesystem {
                 throw new IllegalArgumentException("new failed");
             }
 
-            return new Mount(arena, destPath, fuse, channel);
+            return new Mount(arena, destPath, fuse, channel, umountTimeoutSeconds);
         } catch (Exception e) {
             arena.close();
             throw new RuntimeException("TODO", e);

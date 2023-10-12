@@ -19,12 +19,17 @@ public class Mount extends Thread implements AutoCloseable {
 
     private final MemorySegment fuse;
     private final MemorySegment channel;
+    private final int umountTimeoutSeconds;
 
-    public Mount(Arena arena, String mountpoint, MemorySegment fuse, MemorySegment channel) {
+    public Mount(Arena arena, String mountpoint, MemorySegment fuse, MemorySegment channel, int umountTimeoutSeconds) {
+        if (umountTimeoutSeconds <= 0) {
+            throw new IllegalArgumentException("umount timeout: " + umountTimeoutSeconds);
+        }
         this.arena = arena;
         this.mountpoint = mountpoint;
         this.fuse = fuse;
         this.channel = channel;
+        this.umountTimeoutSeconds = umountTimeoutSeconds;
         this.setDaemon(true); // do not keep running just because there's an active mount
         this.start();
     }
@@ -57,7 +62,7 @@ public class Mount extends Thread implements AutoCloseable {
     /** Trigger umount, which in turn cause fuse loop to terminate */
     @Override
     public void close() throws InterruptedException, IOException {
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < umountTimeoutSeconds * 20; i++) {
             // fuse_exit is not needed: when successful, umount terminates fuse_loop
             fuse_h.fuse_unmount(MemorySegment.NULL /* mount systems hangs if I specify the moint point here */, channel);
             if (!this.isAlive()) {
