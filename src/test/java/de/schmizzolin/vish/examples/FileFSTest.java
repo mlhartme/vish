@@ -15,13 +15,12 @@
  */
 package de.schmizzolin.vish.examples;
 
-import de.schmizzolin.vish.fuse.Configuration;
+import de.schmizzolin.vish.fuse.Options;
 import de.schmizzolin.vish.fuse.Mount;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.Arrays;
 
@@ -38,7 +37,7 @@ public class FileFSTest {
         content = content + content + content + content + content;
         content = content + content + content + content + content;
         FileFS fs = new FileFS(content);
-        try (Mount mount = fs.mount(new Configuration().debug(true), dir)) {
+        try (Mount mount = fs.mount(new Options().debug(true), dir)) {
             assertEquals(Arrays.asList("file"), Arrays.asList(dir.listFiles()).stream().map((file) -> file.getName()).toList());
             assertEquals(content, Files.readString(new File(dir, "file").toPath()));
         }

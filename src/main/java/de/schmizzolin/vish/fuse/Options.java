@@ -19,27 +19,27 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /** Factory for Mounts */
-public class Configuration {
+public class Options {
     private PrintWriter log;
     private int umountTimeoutSeconds;
     private boolean debug;
 
-    public Configuration() {
+    public Options() {
         log = new PrintWriter(System.out);
         umountTimeoutSeconds = 5;
         debug = false;
     }
 
-    public Configuration log(PrintWriter newLog) {
+    public Options log(PrintWriter newLog) {
         this.log = newLog;
         return this;
     }
-    public Configuration umountTimeoutSeconds(int newUmountTimeoutSeconds) {
+    public Options umountTimeoutSeconds(int newUmountTimeoutSeconds) {
         this.umountTimeoutSeconds = newUmountTimeoutSeconds;
         return this;
     }
 
-    public Configuration debug(boolean newDebug) {
+    public Options debug(boolean newDebug) {
         this.debug = newDebug;
         return this;
     }
