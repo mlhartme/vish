@@ -18,6 +18,7 @@ package de.schmizzolin.vish;
 import com.bettercloud.vault.Vault;
 import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
+import de.schmizzolin.vish.fuse.Configuration;
 import de.schmizzolin.vish.vault.VaultFs;
 import de.schmizzolin.vish.fuse.Filesystem;
 import de.schmizzolin.vish.fuse.Mount;
@@ -98,7 +99,7 @@ public final class Main {
         vault = vault(vaultPrefix(path));
         fs = new VaultFs(vault, path, merged);
         cwd = Files.createTempDirectory("vish-tmp");
-        try (Mount mount = fs.configuration().log(getLogger()).apply(fs, cwd.toFile())) {
+        try (Mount mount = fs.mount(new Configuration().log(getLogger()), cwd.toFile())) {
             console.verbose.println("mount thread started");
             body(cwd.toFile());
         } finally {

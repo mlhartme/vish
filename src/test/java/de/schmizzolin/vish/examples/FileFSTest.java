@@ -15,6 +15,7 @@
  */
 package de.schmizzolin.vish.examples;
 
+import de.schmizzolin.vish.fuse.Configuration;
 import de.schmizzolin.vish.fuse.Mount;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +38,7 @@ public class FileFSTest {
         content = content + content + content + content + content;
         content = content + content + content + content + content;
         FileFS fs = new FileFS(content);
-        try (Mount mount = fs.configuration().debug(true).apply(fs, dir)) {
+        try (Mount mount = fs.mount(new Configuration().debug(true), dir)) {
             assertEquals(Arrays.asList("file"), Arrays.asList(dir.listFiles()).stream().map((file) -> file.getName()).toList());
             assertEquals(content, Files.readString(new File(dir, "file").toPath()));
         }

@@ -34,11 +34,11 @@ public interface Filesystem {
 
     //-- mount/unmount
 
-    default Configuration configuration() {
-        return new Configuration().name(name());
+    default Mount mount(File dest) {
+        return mount(new Configuration(), dest);
     }
 
-    default Mount mount(File dest) {
-        return configuration().apply(this, dest);
+    default Mount mount(Configuration configuration, File dest) {
+        return configuration.apply(this, dest, name());
     }
 }

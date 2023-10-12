@@ -20,21 +20,14 @@ import java.util.function.Consumer;
 
 /** Factory for Mounts */
 public class Configuration {
-    private String name;
     private PrintWriter log;
     private int umountTimeoutSeconds;
     private boolean debug;
 
     public Configuration() {
-        name = "noname";
         log = new PrintWriter(System.out);
         umountTimeoutSeconds = 5;
         debug = false;
-    }
-
-    public Configuration name(String newName) {
-        this.name = newName;
-        return this;
     }
 
     public Configuration log(PrintWriter newLog) {
@@ -53,7 +46,7 @@ public class Configuration {
 
     //--
 
-    public Mount apply(Filesystem filesystem, File dest) {
+    public Mount apply(Filesystem filesystem, File dest, String name) {
         System.load("/usr/local/lib/libfuse.dylib");
         String destPath = dest.getAbsolutePath();
         var arena = Arena.ofShared();
