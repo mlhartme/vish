@@ -36,10 +36,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class FileFS extends Filesystem {
     public static void main(String[] args) throws InterruptedException, IOException {
         File dir = new File("target/single-volume");
-        try (Mount mount = new FileFS("Hello, TecDay\n").mount(dir, false)) {
+        Mount mount = new FileFS("Hello, TecDay\n").mount(dir, false);
             System.out.println("mounted " + dir + " ...");
-            Thread.sleep(1000 * 60);
-        }
+            Thread.sleep(1000 * 20);
         System.out.println("done");
     }
 

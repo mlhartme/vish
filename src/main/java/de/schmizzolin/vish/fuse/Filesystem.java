@@ -91,10 +91,7 @@ public abstract class Filesystem {
                 throw new IllegalArgumentException("new failed");
             }
 
-            Mount result = new Mount(arena, dest, fuse, channel);
-            result.setDaemon(false); // TODO
-            result.start();
-            return result;
+            return new Mount(arena, dest, fuse, channel);
         } catch (Exception e) {
             arena.close();
             throw new RuntimeException("TODO", e);

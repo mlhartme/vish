@@ -5,9 +5,11 @@ import foreign.fuse.fuse_h;
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Represents a running mount point. Created by fuse filesystem, invoke close to unmount.
+ * Uses a shutdown hook to make sure that close is called.
  */
 public class Mount extends Thread implements AutoCloseable {
     private final Arena arena;
@@ -22,17 +24,36 @@ public class Mount extends Thread implements AutoCloseable {
         this.mountpoint = mountpoint;
         this.fuse = fuse;
         this.channel = channel;
+        this.setDaemon(true); // do not keep running just because there's an active mount
+        this.start();
     }
 
 
     @Override
     public void run() {
+        AtomicBoolean inShutdown = new AtomicBoolean();
+        inShutdown.set(false);
+        // shutdown hook to invoke close. The is called on both normal vm temincation and on handle ctrl-c.
+        Thread closeOnShutdown = new Thread(() -> {
+            try {
+                inShutdown.set(true);
+                // System.err.println("closing on shutdown");
+                close();
+            } catch (IOException | InterruptedException e) {
+                throw new RuntimeException("close failed: " + e.getMessage(), e);
+            }
+        });
+        Runtime.getRuntime().addShutdownHook(closeOnShutdown);
         int err = fuse_h.fuse_loop(fuse);
+        if (!inShutdown.get()) {
+            Runtime.getRuntime().removeShutdownHook(closeOnShutdown);
+        }
         if (err != 0) {
             throw new IllegalStateException("loop returned " + err);
         }
     }
 
+    /** Trigger umount, which in turn cause fuse loop to terminate */
     @Override
     public void close() throws InterruptedException, IOException {
         for (int i = 0; i < 100; i++) {
