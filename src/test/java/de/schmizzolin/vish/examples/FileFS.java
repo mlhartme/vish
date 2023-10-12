@@ -33,7 +33,7 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** Serves a single file */
-public class FileFS extends Filesystem {
+public class FileFS implements Filesystem {
     public static void main(String[] args) throws InterruptedException {
         File dir = new File("target/single-volume");
         Mount mount = new FileFS("Hello, World\n").mount(dir);

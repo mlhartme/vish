@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /** Vault filesystem */
-public class VaultFs extends Filesystem {
+public class VaultFs implements Filesystem {
     private final VaultDirectory root;
 
     public final Vault vault;

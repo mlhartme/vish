@@ -20,29 +20,29 @@ import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
-public abstract class Filesystem {
-    public String name() {
+public interface Filesystem {
+    default String name() {
         return getClass().getSimpleName();
     }
 
     //-- file system methods
 
-    public abstract Attr getAttr(String path) throws ErrnoException;
-    public abstract void readDir(String path, Consumer<String> filler) throws ErrnoException;
+    Attr getAttr(String path) throws ErrnoException;
+    void readDir(String path, Consumer<String> filler) throws ErrnoException;
 
     /** @param offset into src file, not dest buffer */
-    public abstract int read(String path, ByteBuffer buffer, int offset) throws ErrnoException;
+    int read(String path, ByteBuffer buffer, int offset) throws ErrnoException;
 
     //-- mount/unmount
 
-    public Mount mount(File dest) {
+    default Mount mount(File dest) {
         return mount(dest, new PrintWriter(System.out));
     }
-    public Mount mount(File dest, PrintWriter log) {
+    default Mount mount(File dest, PrintWriter log) {
         return mount(dest, log, 5, false);
     }
 
-    public Mount mount(File dest, PrintWriter log, int umountTimeoutSeconds, boolean debug) {
+    default Mount mount(File dest, PrintWriter log, int umountTimeoutSeconds, boolean debug) {
         return Mount.create(this, log, dest, name(), umountTimeoutSeconds, debug);
     }
 }
