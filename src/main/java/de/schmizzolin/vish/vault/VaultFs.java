@@ -26,7 +26,6 @@ import de.schmizzolin.vish.fuse.Errno;
 import de.schmizzolin.vish.fuse.ErrnoException;
 import de.schmizzolin.vish.util.Stdlib;
 
-import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
@@ -47,9 +46,7 @@ public class VaultFs extends Filesystem {
 
     public final long dirModified;
 
-    public VaultFs(Vault vault, String path, boolean merged, PrintWriter log) {
-        super(log);
-
+    public VaultFs(Vault vault, String path, boolean merged) {
         if (path.length() <= 1 || path.startsWith("/") || !path.endsWith("/")) {
             throw new IllegalArgumentException(path);
         }

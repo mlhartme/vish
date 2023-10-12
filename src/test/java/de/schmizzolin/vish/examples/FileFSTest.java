@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.util.Arrays;
 
@@ -35,7 +36,7 @@ public class FileFSTest {
         String content = Files.readString(new File(BASE, "pom.xml").toPath());
         content = content + content + content + content + content;
         content = content + content + content + content + content;
-        try (Mount mount = new FileFS(content).mount(dir, 5, true)) {
+        try (Mount mount = new FileFS(content).mount(dir, new PrintWriter(System.out), 5, true)) {
             assertEquals(Arrays.asList("file"), Arrays.asList(dir.listFiles()).stream().map((file) -> file.getName()).toList());
             assertEquals(content, Files.readString(new File(dir, "file").toPath()));
         }
