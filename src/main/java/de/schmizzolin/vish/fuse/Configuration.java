@@ -51,6 +51,8 @@ public class Configuration {
         return this;
     }
 
+    //--
+
     public Mount apply(Filesystem filesystem, File dest) {
         System.load("/usr/local/lib/libfuse.dylib");
         String destPath = dest.getAbsolutePath();
@@ -72,12 +74,14 @@ public class Configuration {
                 throw new IllegalArgumentException("new failed");
             }
 
-            return new Mount(log, arena, destPath, fuse, channel, umountTimeoutSeconds);
+            return new Mount(arena, destPath, fuse, channel, umountTimeoutSeconds);
         } catch (RuntimeException e) {
             arena.close();
             throw e;
         }
     }
+
+    //--
 
     private static MemorySegment args(String name, Arena arena, String dest, boolean debug) {
         List<String> args;

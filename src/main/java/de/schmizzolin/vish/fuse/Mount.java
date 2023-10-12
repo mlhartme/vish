@@ -3,7 +3,6 @@ package de.schmizzolin.vish.fuse;
 import foreign.fuse.fuse_h;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,12 +21,9 @@ public class Mount extends Thread implements AutoCloseable {
     private final MemorySegment channel;
     private final int umountTimeoutSeconds;
 
-    public Mount(PrintWriter log, Arena arena, String mountpoint, MemorySegment fuse, MemorySegment channel, int umountTimeoutSeconds) {
+    public Mount(Arena arena, String mountpoint, MemorySegment fuse, MemorySegment channel, int umountTimeoutSeconds) {
         if (umountTimeoutSeconds <= 0) {
             throw new IllegalArgumentException("umount timeout: " + umountTimeoutSeconds);
-        }
-        if (log == null) {
-            throw new IllegalArgumentException();
         }
         this.arena = arena;
         this.mountpoint = mountpoint;

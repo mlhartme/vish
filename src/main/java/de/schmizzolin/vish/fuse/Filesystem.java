@@ -16,7 +16,6 @@
 package de.schmizzolin.vish.fuse;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
@@ -35,14 +34,11 @@ public interface Filesystem {
 
     //-- mount/unmount
 
-    default Mount mount(File dest) {
-        return mount(dest, new PrintWriter(System.out));
-    }
-    default Mount mount(File dest, PrintWriter log) {
-        return mount(dest, log, 5, false);
+    default Configuration configuration() {
+        return new Configuration().name(name());
     }
 
-    default Mount mount(File dest, PrintWriter log, int umountTimeoutSeconds, boolean debug) {
-        return new Configuration().name(name()).log(log).debug(debug).umountTimeoutSeconds(umountTimeoutSeconds).apply(this, dest);
+    default Mount mount(File dest) {
+        return configuration().apply(this, dest);
     }
 }

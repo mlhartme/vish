@@ -98,7 +98,7 @@ public final class Main {
         vault = vault(vaultPrefix(path));
         fs = new VaultFs(vault, path, merged);
         cwd = Files.createTempDirectory("vish-tmp");
-        try (Mount mount = fs.mount(cwd.toFile(), getLogger())) {
+        try (Mount mount = fs.configuration().log(getLogger()).apply(fs, cwd.toFile())) {
             console.verbose.println("mount thread started");
             body(cwd.toFile());
         } finally {
