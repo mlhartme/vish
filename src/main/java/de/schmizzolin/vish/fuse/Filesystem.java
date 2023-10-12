@@ -92,9 +92,9 @@ public abstract class Filesystem {
             }
 
             return new Mount(arena, destPath, fuse, channel, umountTimeoutSeconds);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             arena.close();
-            throw new RuntimeException("TODO", e);
+            throw e;
         }
     }
 
@@ -130,13 +130,12 @@ public abstract class Filesystem {
                         (path, statPtr) -> {
                             try {
                                 var attr = getAttr(path.getUtf8String(0));
-                                var statAddr = stat.ofAddress(statPtr, Arena.global());
+                                var statAddr = stat.ofAddress(statPtr, Arena.global() /* from native code, never free */);
                                 stat.st_mode$set(statAddr, attr.mode());
                                 stat.st_size$set(statAddr, attr.size());
                                 timespec.tv_sec$set(stat.st_mtimespec$slice(statAddr), attr.lastModified());
                                 stat.st_uid$set(statAddr, euid);
                                 stat.st_gid$set(statAddr, egid);
-
                                 return 0;
                             } catch (ErrnoException e) {
                                 if (e.getCause() != null) {
