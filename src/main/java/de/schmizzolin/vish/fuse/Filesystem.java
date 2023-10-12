@@ -43,6 +43,6 @@ public interface Filesystem {
     }
 
     default Mount mount(File dest, PrintWriter log, int umountTimeoutSeconds, boolean debug) {
-        return Mount.create(this, log, dest, name(), umountTimeoutSeconds, debug);
+        return new Configuration().name(name()).log(log).debug(debug).umountTimeoutSeconds(umountTimeoutSeconds).apply(this, dest);
     }
 }
