@@ -1,4 +1,4 @@
-package de.schmizzolin.vish.fuse;
+package de.schmizzolin.vish.filesystem;
 
 import foreign.fuse.fuse_args;
 import foreign.fuse.fuse_h;

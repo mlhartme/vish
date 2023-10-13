@@ -15,8 +15,8 @@
  */
 package de.schmizzolin.vish.vault;
 
-import de.schmizzolin.vish.fuse.Attr;
-import de.schmizzolin.vish.fuse.ErrnoException;
+import de.schmizzolin.vish.filesystem.Attr;
+import de.schmizzolin.vish.filesystem.ErrnoException;
 
 /** File or directory */
 public abstract class VaultNode {

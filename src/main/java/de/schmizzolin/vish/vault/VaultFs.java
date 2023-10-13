@@ -20,10 +20,10 @@ import com.bettercloud.vault.VaultException;
 import com.bettercloud.vault.json.Json;
 import com.bettercloud.vault.json.JsonObject;
 import com.bettercloud.vault.response.LogicalResponse;
-import de.schmizzolin.vish.fuse.Attr;
-import de.schmizzolin.vish.fuse.Filesystem;
-import de.schmizzolin.vish.fuse.Errno;
-import de.schmizzolin.vish.fuse.ErrnoException;
+import de.schmizzolin.vish.filesystem.Attr;
+import de.schmizzolin.vish.filesystem.Filesystem;
+import de.schmizzolin.vish.filesystem.Errno;
+import de.schmizzolin.vish.filesystem.ErrnoException;
 import de.schmizzolin.vish.util.Stdlib;
 
 import java.nio.ByteBuffer;

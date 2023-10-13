@@ -17,9 +17,9 @@ package de.schmizzolin.vish.vault;
 
 import com.bettercloud.vault.VaultException;
 import com.bettercloud.vault.response.LogicalResponse;
-import de.schmizzolin.vish.fuse.Attr;
-import de.schmizzolin.vish.fuse.Errno;
-import de.schmizzolin.vish.fuse.ErrnoException;
+import de.schmizzolin.vish.filesystem.Attr;
+import de.schmizzolin.vish.filesystem.Errno;
+import de.schmizzolin.vish.filesystem.ErrnoException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;

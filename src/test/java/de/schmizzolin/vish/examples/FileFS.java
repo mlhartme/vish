@@ -15,19 +15,15 @@
  */
 package de.schmizzolin.vish.examples;
 
-import de.schmizzolin.vish.fuse.Attr;
-import de.schmizzolin.vish.fuse.Filesystem;
-import de.schmizzolin.vish.fuse.Errno;
-import de.schmizzolin.vish.fuse.ErrnoException;
-import de.schmizzolin.vish.fuse.Mount;
+import de.schmizzolin.vish.filesystem.Attr;
+import de.schmizzolin.vish.filesystem.Filesystem;
+import de.schmizzolin.vish.filesystem.Errno;
+import de.schmizzolin.vish.filesystem.ErrnoException;
+import de.schmizzolin.vish.filesystem.Mount;
 
-import java.io.Console;
 import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -15,8 +15,8 @@
  */
 package de.schmizzolin.vish.examples;
 
-import de.schmizzolin.vish.fuse.Options;
-import de.schmizzolin.vish.fuse.Mount;
+import de.schmizzolin.vish.filesystem.Options;
+import de.schmizzolin.vish.filesystem.Mount;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;

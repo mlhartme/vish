@@ -18,10 +18,10 @@ package de.schmizzolin.vish;
 import com.bettercloud.vault.Vault;
 import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
-import de.schmizzolin.vish.fuse.Options;
+import de.schmizzolin.vish.filesystem.Options;
 import de.schmizzolin.vish.vault.VaultFs;
-import de.schmizzolin.vish.fuse.Filesystem;
-import de.schmizzolin.vish.fuse.Mount;
+import de.schmizzolin.vish.filesystem.Filesystem;
+import de.schmizzolin.vish.filesystem.Mount;
 import net.oneandone.inline.Cli;
 import net.oneandone.inline.Console;
 
