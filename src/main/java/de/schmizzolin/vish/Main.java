@@ -18,6 +18,7 @@ package de.schmizzolin.vish;
 import com.bettercloud.vault.Vault;
 import com.bettercloud.vault.VaultConfig;
 import com.bettercloud.vault.VaultException;
+import com.bettercloud.vault.response.HealthResponse;
 import de.schmizzolin.vish.filesystem.Options;
 import de.schmizzolin.vish.vault.VaultFs;
 import de.schmizzolin.vish.filesystem.Filesystem;
@@ -63,7 +64,6 @@ public final class Main {
     private final List<String> command;
 
     public Main(Console console, boolean merged, String fslog, int timeout, String path, List<String> command) {
-        // TODO: fsLog
         this.console = console;
         if (path != null) {
             if (path.startsWith("/")) {
@@ -97,6 +97,18 @@ public final class Main {
             return;
         }
         vault = vault(vaultPrefix(path));
+        try {
+            HealthResponse health = vault.debug().health();
+            console.verbose.println("initialized=" + health.getInitialized() + ", sealed=" + health.getSealed() + ", standby=" + health.getStandby());
+            if (!Boolean.TRUE.equals(health.getInitialized())) {
+                throw new IOException("cannot access vault: not initialized");
+            }
+            if (!Boolean.FALSE.equals(health.getSealed())) {
+                throw new IOException("cannot access vault: sealed");
+            }
+        } catch (VaultException e) {
+            throw new IOException("cannot access vault: " + e.getMessage(), e);
+        }
         fs = new VaultFs(vault, path, merged);
         cwd = Files.createTempDirectory("vish-tmp");
         try (Mount mount = fs.mount(cwd.toFile(), new Options().log(getLogger()))) {
