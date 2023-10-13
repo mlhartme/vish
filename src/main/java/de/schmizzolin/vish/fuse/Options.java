@@ -100,9 +100,7 @@ public class Options {
                                 stat.st_gid$set(statAddr, egid);
                                 return 0;
                             } catch (ErrnoException e) {
-                                if (e.getCause() != null) {
-                                    e.getCause().printStackTrace(log);
-                                }
+                                report(e);
                                 return e.returnCode();
                             }
                         },
@@ -117,9 +115,7 @@ public class Options {
                                 fs.readDir(path.getUtf8String(0), consumer);
                                 return 0;
                             } catch (ErrnoException e) {
-                                if (e.getCause() != null) {
-                                    e.getCause().printStackTrace(log);
-                                }
+                                report(e);
                                 return e.returnCode();
                             }
                         }, arena));
@@ -131,15 +127,19 @@ public class Options {
                             try {
                                 return fs.read(path.getUtf8String(0), bb, toInt(offset));
                             } catch (ErrnoException e) {
-                                if (e.getCause() != null) {
-                                    e.getCause().printStackTrace(log);
-                                }
+                                report(e);
                                 return e.returnCode();
                             }
                         },
                         arena));
 
         return operations;
+    }
+
+    private void report(ErrnoException e) {
+        if (e.getCause() != null) {
+            e.getCause().printStackTrace(log);
+        }
     }
 
     private static int toInt(long l) {

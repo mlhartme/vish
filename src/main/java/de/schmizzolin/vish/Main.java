@@ -62,7 +62,7 @@ public final class Main {
 
     private final List<String> command;
 
-    public Main(Console console, boolean merged, String fslog, int timeout, String path, List<String> command) throws IOException {
+    public Main(Console console, boolean merged, String fslog, int timeout, String path, List<String> command) {
         // TODO: fsLog
         this.console = console;
         if (path != null) {
