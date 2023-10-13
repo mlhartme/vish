@@ -24,6 +24,7 @@ public class Mount extends Thread implements AutoCloseable {
         if (name == null) {
             name = filesystem.name();
         }
+        // TODO: move all arena code into run thread and switch to Arena.ofConfined()
         var arena = Arena.ofShared();
         try {
             MemorySegment args = options.args(name, arena, destPath);
