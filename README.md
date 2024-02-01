@@ -6,6 +6,7 @@ Run Prerequisites:
 * Intel or ARM Mac
 * Java 21 (which brings https://openjdk.org/jeps/442)
 * OSX Fuse https://osxfuse.github.io
+  (setup is tedious: allow kernel extensions, allow this particular developer, several reboots)
 
 Build Prerequisites
 * Maven with MAVEN_OPTS=--enable-preview
